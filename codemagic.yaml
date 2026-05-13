@@ -8,6 +8,13 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install
+      - name: Download missing assets
+        script: |
+          mkdir -p assets
+          curl -L -o assets/icon.png https://raw.githubusercontent.com/expo/expo/main/templates/expo-template-blank/assets/icon.png
+          curl -L -o assets/splash.png https://raw.githubusercontent.com/expo/expo/main/templates/expo-template-blank/assets/splash.png
+          curl -L -o assets/adaptive-icon.png https://raw.githubusercontent.com/expo/expo/main/templates/expo-template-blank/assets/adaptive-icon.png
+          curl -L -o assets/favicon.png https://raw.githubusercontent.com/expo/expo/main/templates/expo-template-blank/assets/favicon.png
       - name: Expo Prebuild (Generate Native Android Code)
         script: npx expo prebuild --platform android --clean
       - name: Build Android Release APK
@@ -19,7 +26,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - trabattig7@gmail.com # Update this in Codemagic UI or here
+          - your-email@example.com
         notify:
           success: true
           failure: true
