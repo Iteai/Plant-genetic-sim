@@ -1,13 +1,9 @@
 export type Species = 'Chili' | 'Tomato' | 'Basil' | 'Radish';
 
 export type Variety = 
-  // Tomatoes
   | 'Cherry' | 'Roma' | 'Beefsteak' | 'Heirloom' | 'San Marzano'
-  // Chilies
   | 'Jalapeno' | 'Habanero' | 'Cayenne' | 'Poblano' | 'Ghost Pepper'
-  // Basil
   | 'Sweet' | 'Thai' | 'Lemon' | 'Purple' | 'Holy'
-  // Radishes
   | 'Cherry Belle' | 'French Breakfast' | 'Daikon' | 'Black Spanish' | 'Watermelon';
 
 export type GrowthStage = 
@@ -15,6 +11,7 @@ export type GrowthStage =
   | 'Flowering' | 'Fruiting' | 'HarvestReady' | 'Dead';
 
 export type Allele = 'A' | 'a' | 'B' | 'b' | 'C' | 'c' | 'D' | 'd';
+export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 
 export interface GenePair {
   allele1: Allele;
@@ -53,6 +50,7 @@ export interface Seed {
   genetics: PlantGenetics;
   name: string;
   quantity: number;
+  rarity: Rarity;
 }
 
 export interface HarvestedItem {
@@ -62,6 +60,7 @@ export interface HarvestedItem {
   quality: number; 
   quantity: number;
   value: number;
+  rarity: Rarity;
 }
 
 export interface Pot {
