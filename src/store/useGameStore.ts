@@ -27,7 +27,7 @@ const INITIAL_STATE: GameState = {
   ],
   seeds: [],
   inventory: [],
-  money: 50, // Start with 50 coins to buy first seeds
+  money: 100, // Increased starting money
   xp: 0,
   level: 1,
   lastSavedAt: Date.now(),
@@ -49,7 +49,8 @@ export const useGameStore = create<GameStore>()(
           variety: item.variety,
           name: `${item.name} Seed`,
           genetics: item.baseGenetics,
-          quantity: 1
+          quantity: 1,
+          rarity: item.rarity
         };
 
         const existingSeedIndex = state.seeds.findIndex(
@@ -132,16 +133,10 @@ export const useGameStore = create<GameStore>()(
         if (!pot || !pot.plant || pot.plant.stage !== 'HarvestReady') return state;
 
         const plant = pot.plant;
+        const shopRef = SHOP_ITEMS.find(i => i.variety === plant.variety);
         
-        // Base value depends on variety rarity
-        const baseValues: Record<string, number> = {
-          'Cherry': 15, 'Roma': 20, 'Beefsteak': 35, 'Heirloom': 60, 'San Marzano': 45,
-          'Jalapeno': 18, 'Habanero': 30, 'Cayenne': 25, 'Poblano': 35, 'Ghost Pepper': 80,
-          'Sweet': 12, 'Thai': 20, 'Lemon': 25, 'Purple': 40, 'Holy': 50,
-          'Cherry Belle': 8, 'French Breakfast': 15, 'Daikon': 25, 'Black Spanish': 30, 'Watermelon': 55
-        };
-
-        const baseValue = baseValues[plant.variety] || 10;
+        // Value is based on shop price, health, and yield
+        const baseValue = shopRef ? Math.floor(shopRef.price * 1.5) : 15;
 
         const harvestedItem: HarvestedItem = {
           id: `harvest_${Date.now()}`,
@@ -149,7 +144,8 @@ export const useGameStore = create<GameStore>()(
           variety: plant.variety,
           quality: plant.health,
           quantity: plant.yieldAmount,
-          value: Math.floor((plant.health / 100) * baseValue * plant.yieldAmount)
+          value: Math.floor((plant.health / 100) * baseValue * plant.yieldAmount),
+          rarity: shopRef?.rarity || 'Common'
         };
 
         const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null } : p);
