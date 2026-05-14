@@ -7,9 +7,7 @@ const getInheritedAllele = (pair: GenePair): Allele => {
 };
 
 const mutateAllele = (allele: Allele): Allele => {
-  if (Math.random() > MUTATION_CHANCE) {
-    return allele;
-  }
+  if (Math.random() > MUTATION_CHANCE) return allele;
 
   const isUpperCase = allele === allele.toUpperCase();
   return (isUpperCase ? allele.toLowerCase() : allele.toUpperCase()) as Allele;
@@ -25,16 +23,15 @@ const combineGenes = (parentA: GenePair, parentB: GenePair): GenePair => {
     a2 = temp;
   }
 
-  return {
-    allele1: a1,
-    allele2: a2,
-  };
+  return { allele1: a1, allele2: a2 };
 };
 
 export const crossbreed = (
   parentA: PlantGenetics,
   parentB: PlantGenetics
 ): PlantGenetics => {
+  const baseMutations = Math.max(parentA.mutationCount, parentB.mutationCount);
+
   const newGenetics: PlantGenetics = {
     color: combineGenes(parentA.color, parentB.color),
     size: combineGenes(parentA.size, parentB.size),
@@ -43,29 +40,16 @@ export const crossbreed = (
     shape: combineGenes(parentA.shape, parentB.shape),
     texture: combineGenes(parentA.texture, parentB.texture),
     generation: Math.max(parentA.generation, parentB.generation) + 1,
-    mutationCount: Math.max(parentA.mutationCount, parentB.mutationCount),
+    mutationCount: baseMutations,
   };
 
-  const inheritedPairs: Array<keyof Omit<PlantGenetics, 'generation' | 'mutationCount'>> = [
-    'color',
-    'size',
-    'growthRate',
-    'yield',
-    'shape',
-    'texture',
-  ];
+  const parentColorA = JSON.stringify(parentA.color);
+  const parentColorB = JSON.stringify(parentB.color);
+  const childColor = JSON.stringify(newGenetics.color);
 
-  const hasMutation = inheritedPairs.some((key) => {
-    const value = newGenetics[key];
-    const sameAsParentA =
-      value.allele1 === parentA[key].allele1 && value.allele2 === parentA[key].allele2;
-    const sameAsParentB =
-      value.allele1 === parentB[key].allele1 && value.allele2 === parentB[key].allele2;
+  const isMutated = childColor !== parentColorA && childColor !== parentColorB;
 
-    return !sameAsParentA && !sameAsParentB;
-  });
-
-  if (hasMutation) {
+  if (isMutated) {
     newGenetics.mutationCount += 1;
   }
 
