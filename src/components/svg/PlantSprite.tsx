@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Svg, { Path, Circle, G, Defs, RadialGradient, LinearGradient, Stop, Ellipse } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { GrowthStage, Species, Variety } from '../../types';
 
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -19,30 +19,25 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
 }) => {
   const isDead = stage === 'Dead' || health === 0;
   
-  // Organic Wind Animation
-  const sway = useSharedValue(0);
+  // FIXED: Replaced chaotic wind sway with subtle breathing pulse
+  // Plant now stays centered in pot with gentle organic growth pulse
   const breathe = useSharedValue(1);
 
   useEffect(() => {
     if (!isDead) {
-      sway.value = withRepeat(
-        withSequence(
-          withTiming(2, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
-          withTiming(-2, { duration: 3000, easing: Easing.inOut(Easing.sin) })
-        ), -1, true
-      );
       breathe.value = withRepeat(
-        withSequence(
-          withTiming(1.02, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.98, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-        ), -1, true
+        withTiming(1.03, { 
+          duration: 2500, 
+          easing: Easing.inOut(Easing.ease) 
+        }),
+        -1, 
+        true
       );
     }
   }, [isDead]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { rotateZ: `${sway.value}deg` },
       { scaleY: breathe.value },
       { scaleX: breathe.value }
     ],
@@ -158,8 +153,14 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
   const renderPlant = () => {
     if (stage === 'Seed') return <Ellipse cx="80" cy="145" rx="5" ry="3" fill="#8D6E63" />;
     
+    // FIXED: Germination stage now uses much smaller scale to keep plant in pot
     const isRadish = species === 'Radish';
-    const stemHeight = isRadish ? 120 : (stage === 'Seedling' ? 90 : 40);
+    const stemHeight = 
+      stage === 'Germination' ? 110 : 
+      stage === 'Seedling' ? 100 : 
+      isRadish ? 120 : 
+      40;
+    
     const fruitScale = stage === 'HarvestReady' ? 1.4 : 0.9;
 
     return (
@@ -209,8 +210,14 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
         )}
         {isRadish && <Path d={`M 80 150 L 80 120`} stroke={stemColor} strokeWidth="6" fill="none" strokeLinecap="round" />}
 
-        {/* Leaves */}
-        {stage !== 'Seedling' && !isRadish && (
+        {/* Leaves - FIXED: Germination has very few leaves and smaller scale */}
+        {stage === 'Germination' && (
+          <G>
+            {renderLeaf(80, 125, -20, 0.5)}
+            {renderLeaf(80, 125, 200, 0.5)}
+          </G>
+        )}
+        {stage !== 'Seedling' && stage !== 'Germination' && !isRadish && (
           <G>
             {renderLeaf(80, 110, -20, 0.9)}
             {renderLeaf(80, 95, 200, 1.0)}
@@ -220,7 +227,13 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
             {stage !== 'Vegetative' && renderLeaf(80, 45, 215, 0.8)}
           </G>
         )}
-        {stage !== 'Seedling' && isRadish && (
+        {stage === 'Seedling' && !isRadish && (
+          <G>
+            {renderLeaf(80, 110, -20, 0.6)}
+            {renderLeaf(80, 110, 200, 0.6)}
+          </G>
+        )}
+        {stage !== 'Seedling' && stage !== 'Germination' && isRadish && (
           <G>
             {renderLeaf(80, 125, -45, 1.3)}
             {renderLeaf(80, 125, 225, 1.3)}
