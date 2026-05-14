@@ -5,6 +5,7 @@ import { GameState, Pot, Seed, HarvestedItem, Plant, Consumable, DiscoveredStrai
 import { calculateOfflineProgress } from '../utils/timeUtils';
 import { SHOP_ITEMS } from '../constants/plants';
 import { SHOP_CONSUMABLES } from '../constants/items';
+import { calculatePhenotype } from '../genetics/phenotype';
 
 interface GameActions {
   plantSeed: (potId: string, seedId: string) => void;
@@ -71,16 +72,16 @@ export const useGameStore = create<GameStore>()(
         const item = SHOP_ITEMS.find(i => i.id === shopItemId);
         if (!item || state.money < item.price) return state;
 
-      const newSeed: Seed = {
-        id: `hybrid_${Date.now()}`,
-        species: newSpecies,
-        variety: Math.random() > 0.5 ? parentA.variety : parentB.variety,
-        name: `Hybrid ${newSpecies}`,
-        genetics: newGenetics,
-        phenotype: calculatePhenotype(newGenetics, newSpecies), // Aggiungi
-        quantity: 1,
-        rarity: newGenetics.mutationCount > 2 ? 'Legendary' : newGenetics.mutationCount > 0 ? 'Epic' : 'Rare'
-      };
+        const newSeed: Seed = {
+          id: `seed_${Date.now()}_${Math.random()}`,
+          species: item.species,
+          variety: item.variety,
+          name: `${item.name} Seed`,
+          genetics: item.baseGenetics,
+          phenotype: calculatePhenotype(item.baseGenetics, item.species),
+          quantity: 1,
+          rarity: item.rarity,
+        };
 
         get().registerDiscovery(newSeed);
 
@@ -117,7 +118,8 @@ export const useGameStore = create<GameStore>()(
         const newPots = state.pots.map(pot => {
           if (pot.id === potId && pot.plant) {
             if (consumable.type === 'Growth') {
-              return { ...pot, plant: calculateOfflineProgress(pot.plant, 14400000) };
+              const updatedPlant = calculateOfflineProgress(pot.plant, 14400000);
+              return { ...pot, plant: updatedPlant };
             } else if (consumable.type === 'Mutation') {
               return { ...pot, activeFertilizer: 'Mutation' };
             }
@@ -152,6 +154,7 @@ export const useGameStore = create<GameStore>()(
           variety: seed.variety,
           name: seed.name.replace(' Seed', ''),
           genetics: seed.genetics,
+          phenotype: seed.phenotype,
           stage: 'Seed',
           plantedAt: Date.now(),
           lastWateredAt: Date.now(),
@@ -202,6 +205,7 @@ export const useGameStore = create<GameStore>()(
             variety: plant.variety,
             name: `Mutated ${plant.name} Seed`,
             genetics: mutatedGenetics,
+            phenotype: calculatePhenotype(mutatedGenetics, plant.species),
             quantity: 1,
             rarity: 'Epic',
           };
