@@ -5,9 +5,10 @@ import { useGameStore } from '../store/useGameStore';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { PotDisplay } from '../components/PotDisplay';
 import { Seed } from '../types';
+import { Theme } from '../theme/colors';
+import { SeedPacketSvg } from '../components/svg/SeedPacketSvg';
 
 export const GardenScreen: React.FC = () => {
-  // Initialize the real-time game loop
   useGameLoop();
 
   const pots = useGameStore((state) => state.pots);
@@ -26,19 +27,18 @@ export const GardenScreen: React.FC = () => {
   };
 
   const handlePlantSeed = (seedId: string) => {
-    if (selectedPotId) {
-      plantSeed(selectedPotId, seedId);
-    }
+    if (selectedPotId) plantSeed(selectedPotId, seedId);
     setModalVisible(false);
     setSelectedPotId(null);
   };
 
   const renderSeedItem = ({ item }: { item: Seed }) => (
     <TouchableOpacity style={styles.seedItem} onPress={() => handlePlantSeed(item.id)}>
-      <Text style={styles.seedName}>{item.name}</Text>
-      <Text style={styles.seedDetails}>
-        Gen: {item.genetics.generation} | Qty: {item.quantity}
-      </Text>
+      <SeedPacketSvg species={item.species} rarity={item.rarity} width={40} height={55} />
+      <View style={styles.seedInfo}>
+        <Text style={styles.seedName}>{item.name}</Text>
+        <Text style={styles.seedDetails}>Gen: {item.genetics.generation} | Qty: {item.quantity}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -63,13 +63,12 @@ export const GardenScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Seed Selection Modal */}
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select a Seed</Text>
+            <Text style={styles.modalTitle}>Select a Seed to Plant</Text>
             {seeds.length === 0 ? (
-              <Text style={styles.emptyText}>No seeds in inventory.</Text>
+              <Text style={styles.emptyText}>No seeds in inventory. Visit the Shop!</Text>
             ) : (
               <FlatList
                 data={seeds}
@@ -78,10 +77,7 @@ export const GardenScreen: React.FC = () => {
                 style={styles.seedList}
               />
             )}
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={() => setModalVisible(false)}
-            >
+            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Text style={styles.closeButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -92,82 +88,20 @@ export const GardenScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a2e1a',
-  },
-  header: {
-    padding: 20,
-    backgroundColor: '#112211',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2c3e2c',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  scrollContent: {
-    padding: 10,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#2c3e2c',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 15,
-  },
-  seedList: {
-    marginBottom: 15,
-  },
-  seedItem: {
-    backgroundColor: '#1b261b',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#4a6b4a',
-  },
-  seedName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  seedDetails: {
-    color: '#a5d6a7',
-    fontSize: 14,
-    marginTop: 5,
-  },
-  closeButton: {
-    backgroundColor: '#d32f2f',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  emptyText: {
-    color: '#a5d6a7',
-    textAlign: 'center',
-    marginVertical: 20,
-  }
+  container: { flex: 1, backgroundColor: Theme.background },
+  header: { padding: 20, backgroundColor: Theme.surface, borderBottomWidth: 1, borderBottomColor: Theme.surfaceLight },
+  title: { fontSize: 24, fontWeight: 'bold', color: Theme.text },
+  scrollContent: { padding: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: Theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: Theme.text, marginBottom: 20, textAlign: 'center' },
+  seedList: { marginBottom: 20 },
+  seedItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: Theme.surfaceLight, padding: 12, borderRadius: 12, marginBottom: 10, gap: 16 },
+  seedInfo: { flex: 1 },
+  seedName: { color: Theme.text, fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  seedDetails: { color: Theme.textMuted, fontSize: 14 },
+  closeButton: { backgroundColor: Theme.surfaceLight, padding: 16, borderRadius: 12, alignItems: 'center' },
+  closeButtonText: { color: Theme.text, fontWeight: 'bold', fontSize: 16 },
+  emptyText: { color: Theme.textMuted, textAlign: 'center', marginVertical: 30, fontSize: 16 }
 });
