@@ -1,7 +1,9 @@
-import { PlantGenetics, PhenotypeTraits, Species, Variety } from '../types';
+import { PlantGenetics, PhenotypeTraits, Species } from '../types';
 
 const clampScore = (value: number): number => {
-  return Math.max(1, Math.min(5, value));
+  if (value < 1) return 1;
+  if (value > 5) return 5;
+  return value;
 };
 
 const scoreAlleles = (allele1: string, allele2: string): number => {
@@ -21,9 +23,7 @@ export const calculatePhenotype = (
   const sizeScore = clampScore(scoreAlleles(genetics.size.allele1, genetics.size.allele2));
   const shapeScore = clampScore(scoreAlleles(genetics.shape.allele1, genetics.shape.allele2));
   const textureScore = clampScore(scoreAlleles(genetics.texture.allele1, genetics.texture.allele2));
-  const growthSpeed = clampScore(
-    scoreAlleles(genetics.growthRate.allele1, genetics.growthRate.allele2)
-  );
+  const growthSpeed = clampScore(scoreAlleles(genetics.growthRate.allele1, genetics.growthRate.allele2));
   const yieldAmount = clampScore(scoreAlleles(genetics.yield.allele1, genetics.yield.allele2));
 
   return {
@@ -38,35 +38,35 @@ export const calculatePhenotype = (
 
 export const getColorFromScore = (
   species: Species,
-  variety: Variety,
+  variety: string,
   colorScore: number
 ): string => {
-  const score = clampScore(colorScore);
+  const safeScore = clampScore(colorScore);
 
   switch (species) {
     case 'Chili': {
       const colors = ['#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#8B0000'];
-      return colors[score - 1];
+      return colors[safeScore - 1];
     }
 
     case 'Tomato': {
-      const colors = ['#FFD700', '#FFB347', '#FF8C69', '#DC143C', '#8B0000'];
-      return colors[score - 1];
+      const colors = ['#FFD700', '#FF8C00', '#FF6347', '#DC143C', '#8B0000'];
+      return colors[safeScore - 1];
     }
 
     case 'Basil': {
       if (variety === 'Purple' || variety === 'Thai' || variety === 'Holy') {
-        const colors = ['#7CB342', '#558B2F', '#33691E', '#6A1B9A', '#311B92'];
-        return colors[score - 1];
+        const colors = ['#7CB342', '#558B2F', '#33691E', '#4A148C', '#1A237E'];
+        return colors[safeScore - 1];
       }
 
       const colors = ['#C8E6C9', '#81C784', '#4CAF50', '#2E7D32', '#1B5E20'];
-      return colors[score - 1];
+      return colors[safeScore - 1];
     }
 
     case 'Radish': {
-      const colors = ['#FFCDD2', '#F48FB1', '#EC407A', '#C2185B', '#880E4F'];
-      return colors[score - 1];
+      const colors = ['#FF80AB', '#F06292', '#EC407A', '#C2185B', '#880E4F'];
+      return colors[safeScore - 1];
     }
 
     default:
