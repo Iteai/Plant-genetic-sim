@@ -1,16 +1,19 @@
 export type Species = 'Chili' | 'Tomato' | 'Basil' | 'Radish';
 
-export type GrowthStage = 
-  | 'Seed' 
-  | 'Germination' 
-  | 'Seedling' 
-  | 'Vegetative' 
-  | 'Flowering' 
-  | 'Fruiting' 
-  | 'HarvestReady' 
-  | 'Dead';
+export type Variety = 
+  // Tomatoes
+  | 'Cherry' | 'Roma' | 'Beefsteak' | 'Heirloom' | 'San Marzano'
+  // Chilies
+  | 'Jalapeno' | 'Habanero' | 'Cayenne' | 'Poblano' | 'Ghost Pepper'
+  // Basil
+  | 'Sweet' | 'Thai' | 'Lemon' | 'Purple' | 'Holy'
+  // Radishes
+  | 'Cherry Belle' | 'French Breakfast' | 'Daikon' | 'Black Spanish' | 'Watermelon';
 
-// Mendelian Genetics System
+export type GrowthStage = 
+  | 'Seed' | 'Germination' | 'Seedling' | 'Vegetative' 
+  | 'Flowering' | 'Fruiting' | 'HarvestReady' | 'Dead';
+
 export type Allele = 'A' | 'a' | 'B' | 'b' | 'C' | 'c' | 'D' | 'd';
 
 export interface GenePair {
@@ -19,10 +22,10 @@ export interface GenePair {
 }
 
 export interface PlantGenetics {
-  color: GenePair;       // e.g., AA = Red, aa = Yellow
-  size: GenePair;        // e.g., BB = Large, bb = Small
-  growthRate: GenePair;  // e.g., CC = Fast, cc = Slow
-  yield: GenePair;       // e.g., DD = High, dd = Low
+  color: GenePair;       
+  size: GenePair;        
+  growthRate: GenePair;  
+  yield: GenePair;       
   generation: number;
   mutationCount: number;
 }
@@ -30,14 +33,15 @@ export interface PlantGenetics {
 export interface Plant {
   id: string;
   species: Species;
+  variety: Variety;
   name: string;
   genetics: PlantGenetics;
   stage: GrowthStage;
-  plantedAt: number; // Timestamp
-  lastWateredAt: number; // Timestamp
-  waterLevel: number; // 0 to 100
-  health: number; // 0 to 100
-  growthProgress: number; // 0 to 100 per stage
+  plantedAt: number; 
+  lastWateredAt: number; 
+  waterLevel: number; 
+  health: number; 
+  growthProgress: number; 
   yieldAmount: number;
   isHybrid: boolean;
 }
@@ -45,6 +49,7 @@ export interface Plant {
 export interface Seed {
   id: string;
   species: Species;
+  variety: Variety;
   genetics: PlantGenetics;
   name: string;
   quantity: number;
@@ -53,7 +58,8 @@ export interface Seed {
 export interface HarvestedItem {
   id: string;
   species: Species;
-  quality: number; // 1-100 based on health and genetics
+  variety: Variety;
+  quality: number; 
   quantity: number;
   value: number;
 }
@@ -62,7 +68,7 @@ export interface Pot {
   id: string;
   plant: Plant | null;
   size: 'Small' | 'Medium' | 'Large';
-  soilQuality: number; // 0 to 100
+  soilQuality: number; 
 }
 
 export interface GameState {
@@ -73,5 +79,5 @@ export interface GameState {
   xp: number;
   level: number;
   lastSavedAt: number;
-  encyclopedia: string[]; // Array of discovered hybrid IDs
+  encyclopedia: string[]; 
 }
