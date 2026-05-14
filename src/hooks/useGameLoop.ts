@@ -30,7 +30,11 @@ export const useGameLoop = () => {
       
       // Only update if delta is reasonable (prevents huge jumps if interval throttles)
       if (deltaMs > 0 && deltaMs < 5000) {
-        updateGameLoop(deltaMs);
+        try {
+          updateGameLoop(deltaMs);
+        } catch (err) {
+          console.error("Game Loop crash:", err);
+        }
       }
       
       lastTick = now;
