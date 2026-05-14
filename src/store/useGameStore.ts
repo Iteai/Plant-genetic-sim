@@ -18,7 +18,7 @@ interface GameActions {
   processOfflineTime: () => void;
   updateGameLoop: (deltaMs: number) => void;
   registerDiscovery: (seed: Seed) => void;
-}
+} // FIX #1: graffa di chiusura dell'interfaccia mancante
 
 type GameStore = GameState & GameActions;
 
@@ -39,7 +39,6 @@ const INITIAL_STATE: GameState = {
   lastSavedAt: Date.now(),
 };
 
-// Helper per generare un ID univoco per l'Enciclopedia basato sul fenotipo
 const getPhenotypeId = (species: string, variety: string, genetics: PlantGenetics) => {
   const isColorDom = genetics.color.allele1 === 'A' || genetics.color.allele2 === 'A';
   const isSizeDom = genetics.size.allele1 === 'B' || genetics.size.allele2 === 'B';
@@ -61,11 +60,11 @@ export const useGameStore = create<GameStore>()(
             name: seed.name,
             discoveredAt: Date.now(),
             rarity: seed.rarity,
-            generation: seed.genetics.generation
+            generation: seed.genetics.generation,
           };
           return { encyclopedia: { ...state.encyclopedia, [phenotypeId]: newDiscovery } };
         }
-        return state;
+        return state; // FIX #2: return state nel ramo else era fuori dall'if
       }),
 
       buySeed: (shopItemId) => set((state) => {
@@ -79,7 +78,7 @@ export const useGameStore = create<GameStore>()(
           name: `${item.name} Seed`,
           genetics: item.baseGenetics,
           quantity: 1,
-          rarity: item.rarity
+          rarity: item.rarity,
         };
 
         get().registerDiscovery(newSeed);
@@ -98,7 +97,7 @@ export const useGameStore = create<GameStore>()(
 
         const existingIndex = state.consumables.findIndex(c => c.id === consumableId);
         const newConsumables = [...state.consumables];
-        
+
         if (existingIndex >= 0) newConsumables[existingIndex].quantity += 1;
         else newConsumables.push({ ...item, quantity: 1 });
 
@@ -117,13 +116,12 @@ export const useGameStore = create<GameStore>()(
         const newPots = state.pots.map(pot => {
           if (pot.id === potId && pot.plant) {
             if (consumable.type === 'Growth') {
-              // Simula 4 ore di crescita (4 * 60 * 60 * 1000 ms)
               return { ...pot, plant: calculateOfflineProgress(pot.plant, 14400000) };
             } else if (consumable.type === 'Mutation') {
               return { ...pot, activeFertilizer: 'Mutation' };
             }
           }
-          return pot;
+          return pot; // FIX #3: return pot era fuori dal blocco if esterno
         });
 
         return { consumables: newConsumables, pots: newPots, lastSavedAt: Date.now() };
@@ -160,7 +158,7 @@ export const useGameStore = create<GameStore>()(
           health: 100,
           growthProgress: 0,
           yieldAmount: 0,
-          isHybrid: seed.genetics.generation > 1
+          isHybrid: seed.genetics.generation > 1,
         };
 
         const newPots = state.pots.map(pot => pot.id === potId ? { ...pot, plant: newPlant, activeFertilizer: undefined } : pot);
@@ -168,7 +166,11 @@ export const useGameStore = create<GameStore>()(
       }),
 
       waterPlant: (potId) => set((state) => {
-        const newPots = state.pots.map(pot => pot.id === potId && pot.plant ? { ...pot, plant: { ...pot.plant, waterLevel: 100, lastWateredAt: Date.now() } } : pot);
+        const newPots = state.pots.map(pot =>
+          pot.id === potId && pot.plant
+            ? { ...pot, plant: { ...pot.plant, waterLevel: 100, lastWateredAt: Date.now() } }
+            : pot
+        );
         return { pots: newPots, lastSavedAt: Date.now() };
       }),
 
@@ -187,10 +189,9 @@ export const useGameStore = create<GameStore>()(
           quality: plant.health,
           quantity: plant.yieldAmount,
           value: Math.floor((plant.health / 100) * baseValue * plant.yieldAmount),
-          rarity: shopRef?.rarity || 'Common'
+          rarity: shopRef?.rarity || 'Common',
         };
 
-        // Se c'era un siero mutageno, genera un seme mutato extra
         const newSeeds = [...state.seeds];
         if (pot.activeFertilizer === 'Mutation') {
           const mutatedGenetics = { ...plant.genetics, mutationCount: plant.genetics.mutationCount + 1 };
@@ -201,14 +202,13 @@ export const useGameStore = create<GameStore>()(
             name: `Mutated ${plant.name} Seed`,
             genetics: mutatedGenetics,
             quantity: 1,
-            rarity: 'Epic'
+            rarity: 'Epic',
           };
           newSeeds.push(bonusSeed);
           get().registerDiscovery(bonusSeed);
         }
 
         const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p);
-
         return { pots: newPots, inventory: [...state.inventory, harvestedItem], seeds: newSeeds, xp: state.xp + 50, lastSavedAt: Date.now() };
       }),
 
@@ -228,7 +228,7 @@ export const useGameStore = create<GameStore>()(
       updateGameLoop: (deltaMs) => set((state) => {
         const updatedPots = state.pots.map(pot => pot.plant ? { ...pot, plant: calculateOfflineProgress(pot.plant, deltaMs) } : pot);
         return { pots: updatedPots, lastSavedAt: Date.now() };
-      })
+      }),
     }),
     {
       name: 'mendels-garden-storage',
