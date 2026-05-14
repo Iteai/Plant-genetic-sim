@@ -127,7 +127,7 @@ export const InventoryScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#050B08' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#0A140F', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', zIndex: 10 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#0A140F', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   title: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5 },
   moneyContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255, 213, 79, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255, 213, 79, 0.3)' },
   money: { fontSize: 18, fontWeight: 'bold', color: Theme.secondary },
