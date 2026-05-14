@@ -1,7 +1,16 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GameState, Pot, Seed, HarvestedItem, Plant, Consumable, DiscoveredStrain, PlantGenetics } from '../types';
+import {
+  GameState,
+  Seed,
+  HarvestedItem,
+  Plant,
+  DiscoveredStrain,
+  PlantGenetics,
+  Species,
+  Variety,
+} from '../types';
 import { calculateOfflineProgress } from '../utils/timeUtils';
 import { SHOP_ITEMS } from '../constants/plants';
 import { SHOP_CONSUMABLES } from '../constants/items';
@@ -40,10 +49,15 @@ const INITIAL_STATE: GameState = {
   lastSavedAt: Date.now(),
 };
 
-const getPhenotypeId = (species: string, variety: string, genetics: PlantGenetics) => {
+const getPhenotypeId = (
+  species: Species,
+  variety: Variety,
+  genetics: PlantGenetics
+): string => {
   const isColorDom = genetics.color.allele1 === 'A' || genetics.color.allele2 === 'A';
   const isSizeDom = genetics.size.allele1 === 'B' || genetics.size.allele2 === 'B';
-  return `${species}-${variety}-C${isColorDom ? 'D' : 'R'}-S${isSizeDom ? 'D' : 'R'}`;
+
+  return `${species}-${variety}-C${isColorDom ? 'D' : 'R'}-S${isSizeDom ? 'D' : 'R'}-G${genetics.generation}`;
 };
 
 export const useGameStore = create<GameStore>()(
@@ -51,195 +65,348 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       ...INITIAL_STATE,
 
-      registerDiscovery: (seed) => set((state) => {
-        const phenotypeId = getPhenotypeId(seed.species, seed.variety, seed.genetics);
-        if (!state.encyclopedia[phenotypeId]) {
-          const newDiscovery: DiscoveredStrain = {
-            id: phenotypeId,
-            species: seed.species,
-            variety: seed.variety,
-            name: seed.name,
-            discoveredAt: Date.now(),
-            rarity: seed.rarity,
-            generation: seed.genetics.generation,
+      registerDiscovery: (seed) =>
+        set((state) => {
+          const phenotypeId = getPhenotypeId(seed.species, seed.variety, seed.genetics);
+
+          if (!state.encyclopedia[phenotypeId]) {
+            const newDiscovery: DiscoveredStrain = {
+              id: phenotypeId,
+              species: seed.species,
+              variety: seed.variety,
+              name: seed.name,
+              discoveredAt: Date.now(),
+              rarity: seed.rarity,
+              generation: seed.genetics.generation,
+            };
+
+            return {
+              encyclopedia: {
+                ...state.encyclopedia,
+                [phenotypeId]: newDiscovery,
+              },
+            };
+          }
+
+          return state;
+        }),
+
+      buySeed: (shopItemId) =>
+        set((state) => {
+          const item = SHOP_ITEMS.find((i) => i.id === shopItemId);
+          if (!item || state.money < item.price) {
+            return state;
+          }
+
+          const newSeed: Seed = {
+            id: `seed_${Date.now()}_${Math.random()}`,
+            species: item.species,
+            variety: item.variety,
+            name: `${item.name} Seed`,
+            genetics: item.baseGenetics,
+            phenotype: calculatePhenotype(item.baseGenetics, item.species),
+            quantity: 1,
+            rarity: item.rarity,
           };
-          return { encyclopedia: { ...state.encyclopedia, [phenotypeId]: newDiscovery } };
-        }
-        return state;
-      }),
 
-      buySeed: (shopItemId) => set((state) => {
-        const item = SHOP_ITEMS.find(i => i.id === shopItemId);
-        if (!item || state.money < item.price) return state;
+          const existingSeedIndex = state.seeds.findIndex(
+            (s) =>
+              s.species === item.species &&
+              s.variety === item.variety &&
+              s.genetics.generation === item.baseGenetics.generation
+          );
 
-        const newSeed: Seed = {
-          id: `seed_${Date.now()}_${Math.random()}`,
-          species: item.species,
-          variety: item.variety,
-          name: `${item.name} Seed`,
-          genetics: item.baseGenetics,
-          phenotype: calculatePhenotype(item.baseGenetics, item.species),
-          quantity: 1,
-          rarity: item.rarity,
-        };
+          const newSeeds = [...state.seeds];
 
-        get().registerDiscovery(newSeed);
+          if (existingSeedIndex >= 0) {
+            newSeeds[existingSeedIndex] = {
+              ...newSeeds[existingSeedIndex],
+              quantity: newSeeds[existingSeedIndex].quantity + 1,
+            };
+          } else {
+            newSeeds.push(newSeed);
+          }
 
-        const existingSeedIndex = state.seeds.findIndex(s => s.variety === item.variety && s.genetics.generation === 1);
-        const newSeeds = [...state.seeds];
-        if (existingSeedIndex >= 0) newSeeds[existingSeedIndex].quantity += 1;
-        else newSeeds.push(newSeed);
+          return {
+            money: state.money - item.price,
+            seeds: newSeeds,
+            lastSavedAt: Date.now(),
+          };
+        }),
 
-        return { money: state.money - item.price, seeds: newSeeds, lastSavedAt: Date.now() };
-      }),
+      buyConsumable: (consumableId) =>
+        set((state) => {
+          const item = SHOP_CONSUMABLES.find((i) => i.id === consumableId);
+          if (!item || state.money < item.price) {
+            return state;
+          }
 
-      buyConsumable: (consumableId) => set((state) => {
-        const item = SHOP_CONSUMABLES.find(i => i.id === consumableId);
-        if (!item || state.money < item.price) return state;
+          const existingIndex = state.consumables.findIndex((c) => c.id === consumableId);
+          const newConsumables = [...state.consumables];
 
-        const existingIndex = state.consumables.findIndex(c => c.id === consumableId);
-        const newConsumables = [...state.consumables];
+          if (existingIndex >= 0) {
+            newConsumables[existingIndex] = {
+              ...newConsumables[existingIndex],
+              quantity: newConsumables[existingIndex].quantity + 1,
+            };
+          } else {
+            newConsumables.push({ ...item, quantity: 1 });
+          }
 
-        if (existingIndex >= 0) newConsumables[existingIndex].quantity += 1;
-        else newConsumables.push({ ...item, quantity: 1 });
+          return {
+            money: state.money - item.price,
+            consumables: newConsumables,
+            lastSavedAt: Date.now(),
+          };
+        }),
 
-        return { money: state.money - item.price, consumables: newConsumables, lastSavedAt: Date.now() };
-      }),
+      useFertilizer: (potId, consumableId) =>
+        set((state) => {
+          const consumableIndex = state.consumables.findIndex((c) => c.id === consumableId);
+          if (consumableIndex === -1 || state.consumables[consumableIndex].quantity <= 0) {
+            return state;
+          }
 
-      useFertilizer: (potId, consumableId) => set((state) => {
-        const consumableIndex = state.consumables.findIndex(c => c.id === consumableId);
-        if (consumableIndex === -1 || state.consumables[consumableIndex].quantity <= 0) return state;
+          const consumable = state.consumables[consumableIndex];
+          const newConsumables = [...state.consumables];
+          newConsumables[consumableIndex] = {
+            ...newConsumables[consumableIndex],
+            quantity: newConsumables[consumableIndex].quantity - 1,
+          };
 
-        const consumable = state.consumables[consumableIndex];
-        const newConsumables = [...state.consumables];
-        newConsumables[consumableIndex].quantity -= 1;
-        if (newConsumables[consumableIndex].quantity === 0) newConsumables.splice(consumableIndex, 1);
+          if (newConsumables[consumableIndex].quantity <= 0) {
+            newConsumables.splice(consumableIndex, 1);
+          }
 
-        const newPots = state.pots.map(pot => {
-          if (pot.id === potId && pot.plant) {
+          const newPots = state.pots.map((pot) => {
+            if (pot.id !== potId || !pot.plant) {
+              return pot;
+            }
+
             if (consumable.type === 'Growth') {
-              const updatedPlant = calculateOfflineProgress(pot.plant, 14400000);
+              const updatedPlant = calculateOfflineProgress(pot.plant, 4 * 60 * 60 * 1000);
               return { ...pot, plant: updatedPlant };
-            } else if (consumable.type === 'Mutation') {
+            }
+
+            if (consumable.type === 'Mutation') {
               return { ...pot, activeFertilizer: 'Mutation' };
             }
+
+            return pot;
+          });
+
+          return {
+            consumables: newConsumables,
+            pots: newPots,
+            lastSavedAt: Date.now(),
+          };
+        }),
+
+      sellHarvest: (harvestId) =>
+        set((state) => {
+          const itemIndex = state.inventory.findIndex((i) => i.id === harvestId);
+          if (itemIndex === -1) {
+            return state;
           }
-          return pot;
-        });
 
-        return { consumables: newConsumables, pots: newPots, lastSavedAt: Date.now() };
-      }),
+          const item = state.inventory[itemIndex];
+          const newInventory = [...state.inventory];
+          newInventory.splice(itemIndex, 1);
 
-      sellHarvest: (harvestId) => set((state) => {
-        const itemIndex = state.inventory.findIndex(i => i.id === harvestId);
-        if (itemIndex === -1) return state;
-        const item = state.inventory[itemIndex];
-        const newInventory = [...state.inventory];
-        newInventory.splice(itemIndex, 1);
-        return { inventory: newInventory, money: state.money + item.value, lastSavedAt: Date.now() };
-      }),
+          return {
+            inventory: newInventory,
+            money: state.money + item.value,
+            lastSavedAt: Date.now(),
+          };
+        }),
 
-      plantSeed: (potId, seedId) => set((state) => {
-        const seedIndex = state.seeds.findIndex(s => s.id === seedId);
-        if (seedIndex === -1) return state;
+      plantSeed: (potId, seedId) =>
+        set((state) => {
+          const seedIndex = state.seeds.findIndex((s) => s.id === seedId);
+          if (seedIndex === -1) {
+            return state;
+          }
 
-        const seed = state.seeds[seedIndex];
-        const newSeeds = [...state.seeds];
-        if (seed.quantity > 1) newSeeds[seedIndex] = { ...seed, quantity: seed.quantity - 1 };
-        else newSeeds.splice(seedIndex, 1);
+          const targetPot = state.pots.find((pot) => pot.id === potId);
+          if (!targetPot || targetPot.plant) {
+            return state;
+          }
 
-        const newPlant: Plant = {
-          id: `plant_${Date.now()}`,
-          species: seed.species,
-          variety: seed.variety,
-          name: seed.name.replace(' Seed', ''),
-          genetics: seed.genetics,
-          phenotype: seed.phenotype,
-          stage: 'Seed',
-          plantedAt: Date.now(),
-          lastWateredAt: Date.now(),
-          waterLevel: 100,
-          health: 100,
-          growthProgress: 0,
-          yieldAmount: 0,
-          isHybrid: seed.genetics.generation > 1,
-        };
+          const seed = state.seeds[seedIndex];
+          const newSeeds = [...state.seeds];
 
-        const newPots = state.pots.map(pot => pot.id === potId ? { ...pot, plant: newPlant, activeFertilizer: undefined } : pot);
-        return { pots: newPots, seeds: newSeeds, lastSavedAt: Date.now() };
-      }),
+          if (seed.quantity > 1) {
+            newSeeds[seedIndex] = {
+              ...seed,
+              quantity: seed.quantity - 1,
+            };
+          } else {
+            newSeeds.splice(seedIndex, 1);
+          }
 
-      waterPlant: (potId) => set((state) => {
-        const newPots = state.pots.map(pot =>
-          pot.id === potId && pot.plant
-            ? { ...pot, plant: { ...pot.plant, waterLevel: 100, lastWateredAt: Date.now() } }
-            : pot
-        );
-        return { pots: newPots, lastSavedAt: Date.now() };
-      }),
+          const newPlant: Plant = {
+            id: `plant_${Date.now()}`,
+            species: seed.species,
+            variety: seed.variety,
+            name: seed.name.replace(/ Seed$/, ''),
+            genetics: seed.genetics,
+            phenotype: seed.phenotype,
+            stage: 'Seed',
+            plantedAt: Date.now(),
+            lastWateredAt: Date.now(),
+            waterLevel: 100,
+            health: 100,
+            growthProgress: 0,
+            yieldAmount: 0,
+            isHybrid: seed.genetics.generation > 1,
+          };
 
-      harvestPlant: (potId) => set((state) => {
-        const pot = state.pots.find(p => p.id === potId);
-        if (!pot || !pot.plant || pot.plant.stage !== 'HarvestReady') return state;
+          const newPots = state.pots.map((pot) =>
+            pot.id === potId
+              ? { ...pot, plant: newPlant, activeFertilizer: undefined }
+              : pot
+          );
 
-        const plant = pot.plant;
-        const shopRef = SHOP_ITEMS.find(i => i.variety === plant.variety);
-        const baseValue = shopRef ? Math.floor(shopRef.price * 1.5) : 15;
+          return {
+            pots: newPots,
+            seeds: newSeeds,
+            lastSavedAt: Date.now(),
+          };
+        }),
 
-        const harvestedItem: HarvestedItem = {
-          id: `harvest_${Date.now()}`,
-          species: plant.species,
-          variety: plant.variety,
-          quality: plant.health,
-          quantity: plant.yieldAmount,
-          value: Math.floor((plant.health / 100) * baseValue * plant.yieldAmount),
-          rarity: shopRef?.rarity || 'Common',
-        };
+      waterPlant: (potId) =>
+        set((state) => {
+          const newPots = state.pots.map((pot) =>
+            pot.id === potId && pot.plant
+              ? {
+                  ...pot,
+                  plant: {
+                    ...pot.plant,
+                    waterLevel: 100,
+                    lastWateredAt: Date.now(),
+                  },
+                }
+              : pot
+          );
 
-        const newSeeds = [...state.seeds];
-        if (pot.activeFertilizer === 'Mutation') {
-          const mutatedGenetics = { ...plant.genetics, mutationCount: plant.genetics.mutationCount + 1 };
-          const bonusSeed: Seed = {
-            id: `seed_mut_${Date.now()}`,
+          return {
+            pots: newPots,
+            lastSavedAt: Date.now(),
+          };
+        }),
+
+      harvestPlant: (potId) =>
+        set((state) => {
+          const pot = state.pots.find((p) => p.id === potId);
+          if (!pot || !pot.plant || pot.plant.stage !== 'HarvestReady') {
+            return state;
+          }
+
+          const plant = pot.plant;
+          const shopRef = SHOP_ITEMS.find((i) => i.variety === plant.variety);
+          const baseValue = shopRef ? Math.floor(shopRef.price * 1.5) : 15;
+
+          const harvestedItem: HarvestedItem = {
+            id: `harvest_${Date.now()}`,
             species: plant.species,
             variety: plant.variety,
-            name: `Mutated ${plant.name} Seed`,
-            genetics: mutatedGenetics,
-            phenotype: calculatePhenotype(mutatedGenetics, plant.species),
-            quantity: 1,
-            rarity: 'Epic',
+            quality: plant.health,
+            quantity: Math.max(1, plant.yieldAmount),
+            value: Math.floor(
+              (plant.health / 100) * baseValue * Math.max(1, plant.yieldAmount)
+            ),
+            rarity: shopRef?.rarity ?? 'Common',
           };
-          newSeeds.push(bonusSeed);
-          get().registerDiscovery(bonusSeed);
-        }
 
-        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p);
-        return { pots: newPots, inventory: [...state.inventory, harvestedItem], seeds: newSeeds, xp: state.xp + 50, lastSavedAt: Date.now() };
-      }),
+          const newSeeds = [...state.seeds];
 
-      clearDeadPlant: (potId) => set((state) => {
-        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p);
-        return { pots: newPots, lastSavedAt: Date.now() };
-      }),
+          if (pot.activeFertilizer === 'Mutation') {
+            const mutatedGenetics: PlantGenetics = {
+              ...plant.genetics,
+              mutationCount: plant.genetics.mutationCount + 1,
+            };
 
-      processOfflineTime: () => set((state) => {
-        const now = Date.now();
-        const timeDeltaMs = now - state.lastSavedAt;
-        if (timeDeltaMs < 1000) return state;
-        const updatedPots = state.pots.map(pot => pot.plant ? { ...pot, plant: calculateOfflineProgress(pot.plant, timeDeltaMs) } : pot);
-        return { pots: updatedPots, lastSavedAt: now };
-      }),
+            const bonusSeed: Seed = {
+              id: `seed_mut_${Date.now()}`,
+              species: plant.species,
+              variety: plant.variety,
+              name: `Mutated ${plant.name} Seed`,
+              genetics: mutatedGenetics,
+              phenotype: calculatePhenotype(mutatedGenetics, plant.species),
+              quantity: 1,
+              rarity: 'Epic',
+            };
 
-      updateGameLoop: (deltaMs) => set((state) => {
-        const updatedPots = state.pots.map(pot => pot.plant ? { ...pot, plant: calculateOfflineProgress(pot.plant, deltaMs) } : pot);
-        return { pots: updatedPots, lastSavedAt: Date.now() };
-      }),
+            newSeeds.push(bonusSeed);
+          }
+
+          const newPots = state.pots.map((p) =>
+            p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p
+          );
+
+          return {
+            pots: newPots,
+            inventory: [...state.inventory, harvestedItem],
+            seeds: newSeeds,
+            xp: state.xp + 50,
+            lastSavedAt: Date.now(),
+          };
+        }),
+
+      clearDeadPlant: (potId) =>
+        set((state) => {
+          const newPots = state.pots.map((p) =>
+            p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p
+          );
+
+          return {
+            pots: newPots,
+            lastSavedAt: Date.now(),
+          };
+        }),
+
+      processOfflineTime: () =>
+        set((state) => {
+          const now = Date.now();
+          const timeDeltaMs = now - state.lastSavedAt;
+
+          if (timeDeltaMs < 1000) {
+            return state;
+          }
+
+          const updatedPots = state.pots.map((pot) =>
+            pot.plant
+              ? { ...pot, plant: calculateOfflineProgress(pot.plant, timeDeltaMs) }
+              : pot
+          );
+
+          return {
+            pots: updatedPots,
+            lastSavedAt: now,
+          };
+        }),
+
+      updateGameLoop: (deltaMs) =>
+        set((state) => {
+          const updatedPots = state.pots.map((pot) =>
+            pot.plant
+              ? { ...pot, plant: calculateOfflineProgress(pot.plant, deltaMs) }
+              : pot
+          );
+
+          return {
+            pots: updatedPots,
+            lastSavedAt: Date.now(),
+          };
+        }),
     }),
     {
       name: 'mendels-garden-storage',
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
-        if (state) state.processOfflineTime();
+        if (state) {
+          state.processOfflineTime();
+        }
       },
     }
   )
