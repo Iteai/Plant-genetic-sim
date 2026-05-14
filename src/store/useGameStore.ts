@@ -18,7 +18,7 @@ interface GameActions {
   processOfflineTime: () => void;
   updateGameLoop: (deltaMs: number) => void;
   registerDiscovery: (seed: Seed) => void;
-} // FIX #1: graffa di chiusura dell'interfaccia mancante
+}
 
 type GameStore = GameState & GameActions;
 
@@ -64,7 +64,7 @@ export const useGameStore = create<GameStore>()(
           };
           return { encyclopedia: { ...state.encyclopedia, [phenotypeId]: newDiscovery } };
         }
-        return state; // FIX #2: return state nel ramo else era fuori dall'if
+        return state;
       }),
 
       buySeed: (shopItemId) => set((state) => {
@@ -121,7 +121,7 @@ export const useGameStore = create<GameStore>()(
               return { ...pot, activeFertilizer: 'Mutation' };
             }
           }
-          return pot; // FIX #3: return pot era fuori dal blocco if esterno
+          return pot;
         });
 
         return { consumables: newConsumables, pots: newPots, lastSavedAt: Date.now() };
