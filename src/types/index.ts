@@ -63,20 +63,43 @@ export interface HarvestedItem {
   rarity: Rarity;
 }
 
+export type ConsumableType = 'Growth' | 'Mutation';
+
+export interface Consumable {
+  id: string;
+  name: string;
+  type: ConsumableType;
+  description: string;
+  price: number;
+  quantity: number;
+}
+
 export interface Pot {
   id: string;
   plant: Plant | null;
   size: 'Small' | 'Medium' | 'Large';
   soilQuality: number; 
+  activeFertilizer?: ConsumableType; // Traccia se il vaso ha un siero attivo
+}
+
+export interface DiscoveredStrain {
+  id: string; // Es: "Tomato-Cherry-DominantColor-RecessiveSize"
+  species: Species;
+  variety: Variety;
+  name: string;
+  discoveredAt: number;
+  rarity: Rarity;
+  generation: number;
 }
 
 export interface GameState {
   pots: Pot[];
   seeds: Seed[];
   inventory: HarvestedItem[];
+  consumables: Consumable[];
+  encyclopedia: Record<string, DiscoveredStrain>; // Dizionario per lookup veloce
   money: number;
   xp: number;
   level: number;
   lastSavedAt: number;
-  encyclopedia: string[]; 
 }
