@@ -23,33 +23,45 @@ export const InventoryScreen: React.FC = () => {
       <View style={styles.card}>
         <View style={styles.cardContent}>
           <View style={styles.headerRow}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
             <View style={styles.qtyBadge}>
               <Text style={styles.qtyText}>x{item.quantity}</Text>
             </View>
           </View>
           
           <Text style={[styles.rarityText, { color: Theme.rarity[item.rarity] }]}>
-            {item.rarity} Strain • Gen {item.genetics.generation}
+            {item.rarity} • Gen {item.genetics.generation}
           </Text>
 
-          {/* High-Tech Genetics Grid */}
+          {/* Genetics Display */}
           <View style={styles.genesGrid}>
             <View style={styles.geneBox}>
               <Text style={styles.geneLabel}>CLR</Text>
-              <Text style={styles.geneValue}>{item.genetics.color.allele1}{item.genetics.color.allele2}</Text>
+              <Text style={styles.geneValue}>{item.phenotype.colorScore}</Text>
             </View>
             <View style={styles.geneBox}>
               <Text style={styles.geneLabel}>SIZ</Text>
-              <Text style={styles.geneValue}>{item.genetics.size.allele1}{item.genetics.size.allele2}</Text>
+              <Text style={styles.geneValue}>{item.phenotype.sizeScore}</Text>
             </View>
             <View style={styles.geneBox}>
-              <Text style={styles.geneLabel}>GRO</Text>
-              <Text style={styles.geneValue}>{item.genetics.growthRate.allele1}{item.genetics.growthRate.allele2}</Text>
+              <Text style={styles.geneLabel}>SHP</Text>
+              <Text style={styles.geneValue}>{item.phenotype.shapeScore}</Text>
             </View>
             <View style={styles.geneBox}>
-              <Text style={styles.geneLabel}>YLD</Text>
-              <Text style={styles.geneValue}>{item.genetics.yield.allele1}{item.genetics.yield.allele2}</Text>
+              <Text style={styles.geneLabel}>TXR</Text>
+              <Text style={styles.geneValue}>{item.phenotype.textureScore}</Text>
+            </View>
+          </View>
+
+          {/* Additional Traits */}
+          <View style={styles.traitsRow}>
+            <View style={styles.smallTraitBox}>
+              <Text style={styles.smallTraitLabel}>GRO</Text>
+              <Text style={styles.smallTraitValue}>{item.phenotype.growthSpeed}</Text>
+            </View>
+            <View style={styles.smallTraitBox}>
+              <Text style={styles.smallTraitLabel}>YLD</Text>
+              <Text style={styles.smallTraitValue}>{item.phenotype.yieldAmount}</Text>
             </View>
           </View>
         </View>
@@ -60,7 +72,7 @@ export const InventoryScreen: React.FC = () => {
   const renderHarvest = ({ item }: { item: any }) => (
     <View style={styles.harvestCard}>
       <View style={styles.harvestHeader}>
-        <View>
+        <View style={styles.harvestTitleContainer}>
           <Text style={styles.cardTitle}>{item.variety} Harvest</Text>
           <Text style={[styles.rarityText, { color: Theme.rarity[item.rarity] }]}>
             {item.rarity} Quality • {Math.round(item.quality)}% Health
@@ -103,11 +115,17 @@ export const InventoryScreen: React.FC = () => {
       </View>
 
       <View style={styles.tabs}>
-        <TouchableOpacity style={[styles.tab, tab === 'seeds' && styles.activeTab]} onPress={() => setTab('seeds')}>
+        <TouchableOpacity 
+          style={[styles.tab, tab === 'seeds' && styles.activeTab]} 
+          onPress={() => setTab('seeds')}
+        >
           <Beaker color={tab === 'seeds' ? '#18FFFF' : 'rgba(255,255,255,0.4)'} size={20} />
           <Text style={[styles.tabText, tab === 'seeds' && styles.activeTabText]}>Genetic Seeds</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, tab === 'harvests' && styles.activeTab]} onPress={() => setTab('harvests')}>
+        <TouchableOpacity 
+          style={[styles.tab, tab === 'harvests' && styles.activeTab]} 
+          onPress={() => setTab('harvests')}
+        >
           <Leaf color={tab === 'harvests' ? '#00E676' : 'rgba(255,255,255,0.4)'} size={20} />
           <Text style={[styles.tabText, tab === 'harvests' && styles.activeTabText]}>Organic Harvests</Text>
         </TouchableOpacity>
@@ -119,44 +137,274 @@ export const InventoryScreen: React.FC = () => {
         renderItem={tab === 'seeds' ? renderSeed : renderHarvest}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={<Text style={styles.emptyText}>Archive is empty.</Text>}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {tab === 'seeds' ? 'No seeds yet. Visit the Shop!' : 'No harvests yet. Plant and grow!'}
+            </Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050B08' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#0A140F', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
-  title: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5 },
-  moneyContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255, 213, 79, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255, 213, 79, 0.3)' },
-  money: { fontSize: 18, fontWeight: 'bold', color: Theme.secondary },
-  tabs: { flexDirection: 'row', padding: 16, gap: 12 },
-  tab: { flex: 1, flexDirection: 'row', padding: 12, alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#111D16', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  activeTab: { backgroundColor: 'rgba(24, 255, 255, 0.1)', borderColor: 'rgba(24, 255, 255, 0.3)' },
-  tabText: { color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', fontSize: 14 },
-  activeTabText: { color: '#18FFFF' },
-  listContent: { padding: 16, paddingBottom: 40 },
-  cardWrapper: { position: 'relative', marginBottom: 20, paddingLeft: 20 },
-  packetContainer: { position: 'absolute', left: 0, top: -10, zIndex: 2, shadowColor: '#000', shadowOffset: { width: -4, height: 8 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 8 },
-  card: { backgroundColor: '#111D16', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginLeft: 30, minHeight: 110, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  cardContent: { padding: 16, paddingLeft: 50 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  cardTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', flex: 1 },
-  qtyBadge: { backgroundColor: 'rgba(0, 230, 118, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0, 230, 118, 0.4)' },
-  qtyText: { color: '#00E676', fontWeight: '900', fontSize: 12 },
-  rarityText: { fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
-  genesGrid: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.3)', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  geneBox: { alignItems: 'center' },
-  geneLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 'bold', letterSpacing: 1, marginBottom: 2 },
-  geneValue: { color: '#18FFFF', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
-  harvestCard: { backgroundColor: '#111D16', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  harvestHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  harvestBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 12 },
-  priceTag: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  priceText: { color: Theme.secondary, fontWeight: '900', fontSize: 18 },
-  sellButtonWrapper: { borderRadius: 12, overflow: 'hidden', shadowColor: '#FF8F00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 },
-  sellButton: { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 20, alignItems: 'center', gap: 8 },
-  sellButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5 },
-  emptyText: { color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 40, fontSize: 16 }
+  container: { 
+    flex: 1, 
+    backgroundColor: '#050B08' 
+  },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 20, 
+    backgroundColor: '#0A140F', 
+    borderBottomWidth: 1, 
+    borderBottomColor: 'rgba(255,255,255,0.05)' 
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: '#FFFFFF', 
+    letterSpacing: 0.5 
+  },
+  moneyContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8, 
+    backgroundColor: 'rgba(255, 213, 79, 0.1)', 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255, 213, 79, 0.3)' 
+  },
+  money: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: Theme.secondary 
+  },
+  tabs: { 
+    flexDirection: 'row', 
+    padding: 16, 
+    gap: 12 
+  },
+  tab: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    padding: 12, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 8, 
+    backgroundColor: '#111D16', 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.05)' 
+  },
+  activeTab: { 
+    backgroundColor: 'rgba(24, 255, 255, 0.1)', 
+    borderColor: 'rgba(24, 255, 255, 0.3)' 
+  },
+  tabText: { 
+    color: 'rgba(255,255,255,0.4)', 
+    fontWeight: 'bold', 
+    fontSize: 14 
+  },
+  activeTabText: { 
+    color: '#18FFFF' 
+  },
+  listContent: { 
+    padding: 16, 
+    paddingBottom: 40 
+  },
+  cardWrapper: { 
+    position: 'relative', 
+    marginBottom: 20, 
+    paddingLeft: 20 
+  },
+  packetContainer: { 
+    position: 'absolute', 
+    left: 0, 
+    top: -10, 
+    zIndex: 2, 
+    shadowColor: '#000', 
+    shadowOffset: { width: -4, height: 8 }, 
+    shadowOpacity: 0.5, 
+    shadowRadius: 8, 
+    elevation: 8 
+  },
+  card: { 
+    backgroundColor: '#111D16', 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.05)', 
+    marginLeft: 30, 
+    minHeight: 110, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 8, 
+    elevation: 4 
+  },
+  cardContent: { 
+    padding: 16, 
+    paddingLeft: 50 
+  },
+  headerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start', 
+    marginBottom: 4 
+  },
+  cardTitle: { 
+    color: '#FFFFFF', 
+    fontSize: 18, 
+    fontWeight: '800', 
+    flex: 1 
+  },
+  qtyBadge: { 
+    backgroundColor: 'rgba(0, 230, 118, 0.15)', 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: 'rgba(0, 230, 118, 0.4)' 
+  },
+  qtyText: { 
+    color: '#00E676', 
+    fontWeight: '900', 
+    fontSize: 12 
+  },
+  rarityText: { 
+    fontSize: 11, 
+    fontWeight: 'bold', 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5, 
+    marginBottom: 10 
+  },
+  genesGrid: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    backgroundColor: 'rgba(0,0,0,0.3)', 
+    padding: 10, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 8,
+  },
+  geneBox: { 
+    alignItems: 'center',
+    flex: 1,
+  },
+  geneLabel: { 
+    color: 'rgba(255,255,255,0.4)', 
+    fontSize: 8, 
+    fontWeight: 'bold', 
+    letterSpacing: 1, 
+    marginBottom: 2 
+  },
+  geneValue: { 
+    color: '#18FFFF', 
+    fontSize: 13, 
+    fontWeight: '900', 
+    letterSpacing: 1 
+  },
+  traitsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  smallTraitBox: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 230, 118, 0.2)',
+    alignItems: 'center',
+  },
+  smallTraitLabel: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 8,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  smallTraitValue: {
+    color: '#00E676',
+    fontSize: 12,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  harvestCard: { 
+    backgroundColor: '#111D16', 
+    borderRadius: 20, 
+    padding: 16, 
+    marginBottom: 16, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.05)' 
+  },
+  harvestHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start', 
+    marginBottom: 16 
+  },
+  harvestTitleContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  harvestBottom: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    borderTopWidth: 1, 
+    borderTopColor: 'rgba(255,255,255,0.05)', 
+    paddingTop: 12 
+  },
+  priceTag: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6 
+  },
+  priceText: { 
+    color: Theme.secondary, 
+    fontWeight: '900', 
+    fontSize: 18 
+  },
+  sellButtonWrapper: { 
+    borderRadius: 12, 
+    overflow: 'hidden', 
+    shadowColor: '#FF8F00', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 6, 
+    elevation: 4 
+  },
+  sellButton: { 
+    flexDirection: 'row', 
+    paddingVertical: 8, 
+    paddingHorizontal: 20, 
+    alignItems: 'center', 
+    gap: 8 
+  },
+  sellButtonText: { 
+    color: '#FFF', 
+    fontWeight: 'bold', 
+    fontSize: 14, 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5 
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: { 
+    color: 'rgba(255,255,255,0.4)', 
+    textAlign: 'center', 
+    fontSize: 16,
+    fontWeight: '500',
+  }
 });
