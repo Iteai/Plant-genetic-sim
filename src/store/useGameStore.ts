@@ -71,15 +71,16 @@ export const useGameStore = create<GameStore>()(
         const item = SHOP_ITEMS.find(i => i.id === shopItemId);
         if (!item || state.money < item.price) return state;
 
-        const newSeed: Seed = {
-          id: `seed_${Date.now()}_${Math.random()}`,
-          species: item.species,
-          variety: item.variety,
-          name: `${item.name} Seed`,
-          genetics: item.baseGenetics,
-          quantity: 1,
-          rarity: item.rarity,
-        };
+      const newSeed: Seed = {
+        id: `hybrid_${Date.now()}`,
+        species: newSpecies,
+        variety: Math.random() > 0.5 ? parentA.variety : parentB.variety,
+        name: `Hybrid ${newSpecies}`,
+        genetics: newGenetics,
+        phenotype: calculatePhenotype(newGenetics, newSpecies), // Aggiungi
+        quantity: 1,
+        rarity: newGenetics.mutationCount > 2 ? 'Legendary' : newGenetics.mutationCount > 0 ? 'Epic' : 'Rare'
+      };
 
         get().registerDiscovery(newSeed);
 
