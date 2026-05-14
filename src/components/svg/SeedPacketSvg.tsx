@@ -1,5 +1,6 @@
 import React from 'react';
-import Svg, { Path, Rect, Defs, LinearGradient, RadialGradient, Stop, G, Ellipse, Polygon } from 'react-native-svg';
+// FIX: Circle aggiunto agli import da react-native-svg
+import Svg, { Path, Rect, Defs, LinearGradient, RadialGradient, Stop, G, Ellipse, Polygon, Circle } from 'react-native-svg';
 import { Species, Rarity } from '../../types';
 import { Theme } from '../../theme/colors';
 
@@ -11,25 +12,24 @@ interface SeedPacketProps {
 }
 
 export const SeedPacketSvg: React.FC<SeedPacketProps> = ({ species, rarity, width = 80, height = 112 }) => {
-  // Premium Foil Colors for Rarity
   const getFoilGradient = () => {
-    switch(rarity) {
-      case 'Common': return ['#B0BEC5', '#78909C', '#CFD8DC']; // Silver
-      case 'Rare': return ['#42A5F5', '#1565C0', '#90CAF9']; // Blue Foil
-      case 'Epic': return ['#AB47BC', '#6A1B9A', '#E1BEE7']; // Purple Foil
-      case 'Legendary': return ['#FFCA28', '#FF8F00', '#FFECB3']; // Gold Foil
-      default: return ['#B0BEC5', '#78909C', '#CFD8DC'];
+    switch (rarity) {
+      case 'Common':    return ['#B0BEC5', '#78909C', '#CFD8DC'];
+      case 'Rare':      return ['#42A5F5', '#1565C0', '#90CAF9'];
+      case 'Epic':      return ['#AB47BC', '#6A1B9A', '#E1BEE7'];
+      case 'Legendary': return ['#FFCA28', '#FF8F00', '#FFECB3'];
+      default:          return ['#B0BEC5', '#78909C', '#CFD8DC'];
     }
   };
   const foil = getFoilGradient();
 
   const getSpeciesColor = () => {
-    switch(species) {
+    switch (species) {
       case 'Tomato': return ['#E53935', '#B71C1C'];
-      case 'Chili': return ['#FB8C00', '#E65100'];
-      case 'Basil': return ['#43A047', '#1B5E20'];
+      case 'Chili':  return ['#FB8C00', '#E65100'];
+      case 'Basil':  return ['#43A047', '#1B5E20'];
       case 'Radish': return ['#D81B60', '#880E4F'];
-      default: return ['#757575', '#424242'];
+      default:       return ['#757575', '#424242'];
     }
   };
   const speciesColors = getSpeciesColor();
@@ -37,27 +37,23 @@ export const SeedPacketSvg: React.FC<SeedPacketProps> = ({ species, rarity, widt
   return (
     <Svg width={width} height={height} viewBox="0 0 100 140">
       <Defs>
-        {/* Realistic Paper Texture/Lighting */}
         <LinearGradient id="paperBase" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
           <Stop offset="0.5" stopColor="#F5F5F0" stopOpacity="1" />
           <Stop offset="1" stopColor="#E0E0D8" stopOpacity="1" />
         </LinearGradient>
-        
-        {/* Top Fold Crease Shadow */}
+
         <LinearGradient id="foldShadow" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.8" />
           <Stop offset="0.8" stopColor="#D6D6D0" stopOpacity="1" />
           <Stop offset="1" stopColor="#BDBDB5" stopOpacity="1" />
         </LinearGradient>
 
-        {/* Species Banner Gradient */}
         <LinearGradient id="speciesBanner" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0" stopColor={speciesColors[0]} stopOpacity="1" />
           <Stop offset="1" stopColor={speciesColors[1]} stopOpacity="1" />
         </LinearGradient>
 
-        {/* Rarity Foil Gradient */}
         <LinearGradient id="rarityFoil" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0" stopColor={foil[2]} stopOpacity="1" />
           <Stop offset="0.4" stopColor={foil[0]} stopOpacity="1" />
@@ -65,32 +61,24 @@ export const SeedPacketSvg: React.FC<SeedPacketProps> = ({ species, rarity, widt
           <Stop offset="1" stopColor={foil[0]} stopOpacity="1" />
         </LinearGradient>
 
-        {/* Drop Shadow for the whole packet */}
         <RadialGradient id="packetShadow" cx="50%" cy="50%" r="50%">
           <Stop offset="0%" stopColor="#000000" stopOpacity="0.4" />
           <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
         </RadialGradient>
       </Defs>
 
-      {/* Ambient Drop Shadow */}
       <Rect x="6" y="16" width="88" height="120" rx="6" fill="url(#packetShadow)" />
-
-      {/* Main Paper Body */}
       <Rect x="10" y="15" width="80" height="115" rx="4" fill="url(#paperBase)" stroke="#C7C7C0" strokeWidth="1" />
-      
-      {/* Top Fold (Sealed part) */}
+
       <Path d="M 10 25 L 10 12 C 10 9, 13 6, 16 6 L 84 6 C 87 6, 90 9, 90 12 L 90 25 Z" fill="url(#foldShadow)" stroke="#C7C7C0" strokeWidth="1" />
       <Path d="M 10 25 L 90 25" stroke="#A3A39C" strokeWidth="1.5" strokeDasharray="3,3" />
 
-      {/* Species Color Banner (Bottom Half) */}
       <Path d="M 10 75 L 90 75 L 90 126 C 90 128.2 88.2 130 86 130 L 14 130 C 11.8 130 10 128.2 10 126 Z" fill="url(#speciesBanner)" />
       <Rect x="10" y="75" width="80" height="4" fill="#FFFFFF" opacity="0.3" />
 
-      {/* Rarity Foil Indicator (Diamond/Hexagon) */}
       <Polygon points="50,110 65,120 50,130 35,120" fill="url(#rarityFoil)" stroke="#FFFFFF" strokeWidth="1.5" />
       <Polygon points="50,113 60,120 50,127 40,120" fill="#FFFFFF" opacity="0.3" />
 
-      {/* Detailed Miniature Plant Graphics */}
       <G transform="translate(50, 55)">
         {species === 'Tomato' && (
           <G>
