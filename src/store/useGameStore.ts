@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GameState, Pot, Seed, HarvestedItem, Plant } from '../types';
+import { GameState, Pot, Seed, HarvestedItem, Plant, Consumable, DiscoveredStrain, PlantGenetics } from '../types';
 import { calculateOfflineProgress } from '../utils/timeUtils';
 import { SHOP_ITEMS } from '../constants/plants';
+import { SHOP_CONSUMABLES } from '../constants/items';
 
 interface GameActions {
   plantSeed: (potId: string, seedId: string) => void;
@@ -11,9 +12,12 @@ interface GameActions {
   harvestPlant: (potId: string) => void;
   clearDeadPlant: (potId: string) => void;
   buySeed: (shopItemId: string) => void;
+  buyConsumable: (consumableId: string) => void;
+  useFertilizer: (potId: string, consumableId: string) => void;
   sellHarvest: (harvestId: string) => void;
   processOfflineTime: () => void;
   updateGameLoop: (deltaMs: number) => void;
+  registerDiscovery: (seed: Seed) => void;
 }
 
 type GameStore = GameState & GameActions;
@@ -27,17 +31,42 @@ const INITIAL_STATE: GameState = {
   ],
   seeds: [],
   inventory: [],
-  money: 100, // Increased starting money
+  consumables: [],
+  encyclopedia: {},
+  money: 200,
   xp: 0,
   level: 1,
   lastSavedAt: Date.now(),
-  encyclopedia: [],
+};
+
+// Helper per generare un ID univoco per l'Enciclopedia basato sul fenotipo
+const getPhenotypeId = (species: string, variety: string, genetics: PlantGenetics) => {
+  const isColorDom = genetics.color.allele1 === 'A' || genetics.color.allele2 === 'A';
+  const isSizeDom = genetics.size.allele1 === 'B' || genetics.size.allele2 === 'B';
+  return `${species}-${variety}-C${isColorDom ? 'D' : 'R'}-S${isSizeDom ? 'D' : 'R'}`;
 };
 
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
       ...INITIAL_STATE,
+
+      registerDiscovery: (seed) => set((state) => {
+        const phenotypeId = getPhenotypeId(seed.species, seed.variety, seed.genetics);
+        if (!state.encyclopedia[phenotypeId]) {
+          const newDiscovery: DiscoveredStrain = {
+            id: phenotypeId,
+            species: seed.species,
+            variety: seed.variety,
+            name: seed.name,
+            discoveredAt: Date.now(),
+            rarity: seed.rarity,
+            generation: seed.genetics.generation
+          };
+          return { encyclopedia: { ...state.encyclopedia, [phenotypeId]: newDiscovery } };
+        }
+        return state;
+      }),
 
       buySeed: (shopItemId) => set((state) => {
         const item = SHOP_ITEMS.find(i => i.id === shopItemId);
@@ -53,33 +82,60 @@ export const useGameStore = create<GameStore>()(
           rarity: item.rarity
         };
 
-        const existingSeedIndex = state.seeds.findIndex(
-          s => s.variety === item.variety && s.genetics.generation === 1
-        );
+        get().registerDiscovery(newSeed);
 
+        const existingSeedIndex = state.seeds.findIndex(s => s.variety === item.variety && s.genetics.generation === 1);
         const newSeeds = [...state.seeds];
-        if (existingSeedIndex >= 0) {
-          newSeeds[existingSeedIndex].quantity += 1;
-        } else {
-          newSeeds.push(newSeed);
-        }
+        if (existingSeedIndex >= 0) newSeeds[existingSeedIndex].quantity += 1;
+        else newSeeds.push(newSeed);
 
         return { money: state.money - item.price, seeds: newSeeds, lastSavedAt: Date.now() };
+      }),
+
+      buyConsumable: (consumableId) => set((state) => {
+        const item = SHOP_CONSUMABLES.find(i => i.id === consumableId);
+        if (!item || state.money < item.price) return state;
+
+        const existingIndex = state.consumables.findIndex(c => c.id === consumableId);
+        const newConsumables = [...state.consumables];
+        
+        if (existingIndex >= 0) newConsumables[existingIndex].quantity += 1;
+        else newConsumables.push({ ...item, quantity: 1 });
+
+        return { money: state.money - item.price, consumables: newConsumables, lastSavedAt: Date.now() };
+      }),
+
+      useFertilizer: (potId, consumableId) => set((state) => {
+        const consumableIndex = state.consumables.findIndex(c => c.id === consumableId);
+        if (consumableIndex === -1 || state.consumables[consumableIndex].quantity <= 0) return state;
+
+        const consumable = state.consumables[consumableIndex];
+        const newConsumables = [...state.consumables];
+        newConsumables[consumableIndex].quantity -= 1;
+        if (newConsumables[consumableIndex].quantity === 0) newConsumables.splice(consumableIndex, 1);
+
+        const newPots = state.pots.map(pot => {
+          if (pot.id === potId && pot.plant) {
+            if (consumable.type === 'Growth') {
+              // Simula 4 ore di crescita (4 * 60 * 60 * 1000 ms)
+              return { ...pot, plant: calculateOfflineProgress(pot.plant, 14400000) };
+            } else if (consumable.type === 'Mutation') {
+              return { ...pot, activeFertilizer: 'Mutation' };
+            }
+          }
+          return pot;
+        });
+
+        return { consumables: newConsumables, pots: newPots, lastSavedAt: Date.now() };
       }),
 
       sellHarvest: (harvestId) => set((state) => {
         const itemIndex = state.inventory.findIndex(i => i.id === harvestId);
         if (itemIndex === -1) return state;
-        
         const item = state.inventory[itemIndex];
         const newInventory = [...state.inventory];
         newInventory.splice(itemIndex, 1);
-
-        return { 
-          inventory: newInventory, 
-          money: state.money + item.value,
-          lastSavedAt: Date.now() 
-        };
+        return { inventory: newInventory, money: state.money + item.value, lastSavedAt: Date.now() };
       }),
 
       plantSeed: (potId, seedId) => set((state) => {
@@ -88,12 +144,8 @@ export const useGameStore = create<GameStore>()(
 
         const seed = state.seeds[seedIndex];
         const newSeeds = [...state.seeds];
-        
-        if (seed.quantity > 1) {
-          newSeeds[seedIndex] = { ...seed, quantity: seed.quantity - 1 };
-        } else {
-          newSeeds.splice(seedIndex, 1);
-        }
+        if (seed.quantity > 1) newSeeds[seedIndex] = { ...seed, quantity: seed.quantity - 1 };
+        else newSeeds.splice(seedIndex, 1);
 
         const newPlant: Plant = {
           id: `plant_${Date.now()}`,
@@ -111,20 +163,12 @@ export const useGameStore = create<GameStore>()(
           isHybrid: seed.genetics.generation > 1
         };
 
-        const newPots = state.pots.map(pot => 
-          pot.id === potId ? { ...pot, plant: newPlant } : pot
-        );
-
+        const newPots = state.pots.map(pot => pot.id === potId ? { ...pot, plant: newPlant, activeFertilizer: undefined } : pot);
         return { pots: newPots, seeds: newSeeds, lastSavedAt: Date.now() };
       }),
 
       waterPlant: (potId) => set((state) => {
-        const newPots = state.pots.map(pot => {
-          if (pot.id === potId && pot.plant) {
-            return { ...pot, plant: { ...pot.plant, waterLevel: 100, lastWateredAt: Date.now() } };
-          }
-          return pot;
-        });
+        const newPots = state.pots.map(pot => pot.id === potId && pot.plant ? { ...pot, plant: { ...pot.plant, waterLevel: 100, lastWateredAt: Date.now() } } : pot);
         return { pots: newPots, lastSavedAt: Date.now() };
       }),
 
@@ -134,8 +178,6 @@ export const useGameStore = create<GameStore>()(
 
         const plant = pot.plant;
         const shopRef = SHOP_ITEMS.find(i => i.variety === plant.variety);
-        
-        // Value is based on shop price, health, and yield
         const baseValue = shopRef ? Math.floor(shopRef.price * 1.5) : 15;
 
         const harvestedItem: HarvestedItem = {
@@ -148,18 +190,30 @@ export const useGameStore = create<GameStore>()(
           rarity: shopRef?.rarity || 'Common'
         };
 
-        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null } : p);
+        // Se c'era un siero mutageno, genera un seme mutato extra
+        const newSeeds = [...state.seeds];
+        if (pot.activeFertilizer === 'Mutation') {
+          const mutatedGenetics = { ...plant.genetics, mutationCount: plant.genetics.mutationCount + 1 };
+          const bonusSeed: Seed = {
+            id: `seed_mut_${Date.now()}`,
+            species: plant.species,
+            variety: plant.variety,
+            name: `Mutated ${plant.name} Seed`,
+            genetics: mutatedGenetics,
+            quantity: 1,
+            rarity: 'Epic'
+          };
+          newSeeds.push(bonusSeed);
+          get().registerDiscovery(bonusSeed);
+        }
 
-        return {
-          pots: newPots,
-          inventory: [...state.inventory, harvestedItem],
-          xp: state.xp + 50,
-          lastSavedAt: Date.now()
-        };
+        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p);
+
+        return { pots: newPots, inventory: [...state.inventory, harvestedItem], seeds: newSeeds, xp: state.xp + 50, lastSavedAt: Date.now() };
       }),
 
       clearDeadPlant: (potId) => set((state) => {
-        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null } : p);
+        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null, activeFertilizer: undefined } : p);
         return { pots: newPots, lastSavedAt: Date.now() };
       }),
 
@@ -167,20 +221,12 @@ export const useGameStore = create<GameStore>()(
         const now = Date.now();
         const timeDeltaMs = now - state.lastSavedAt;
         if (timeDeltaMs < 1000) return state;
-
-        const updatedPots = state.pots.map(pot => {
-          if (!pot.plant) return pot;
-          return { ...pot, plant: calculateOfflineProgress(pot.plant, timeDeltaMs) };
-        });
-
+        const updatedPots = state.pots.map(pot => pot.plant ? { ...pot, plant: calculateOfflineProgress(pot.plant, timeDeltaMs) } : pot);
         return { pots: updatedPots, lastSavedAt: now };
       }),
 
       updateGameLoop: (deltaMs) => set((state) => {
-        const updatedPots = state.pots.map(pot => {
-          if (!pot.plant) return pot;
-          return { ...pot, plant: calculateOfflineProgress(pot.plant, deltaMs) };
-        });
+        const updatedPots = state.pots.map(pot => pot.plant ? { ...pot, plant: calculateOfflineProgress(pot.plant, deltaMs) } : pot);
         return { pots: updatedPots, lastSavedAt: Date.now() };
       })
     }),
