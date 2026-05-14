@@ -10,7 +10,7 @@ export type GrowthStage =
   | 'Seed' | 'Germination' | 'Seedling' | 'Vegetative' 
   | 'Flowering' | 'Fruiting' | 'HarvestReady' | 'Dead';
 
-export type Allele = 'A' | 'a' | 'B' | 'b' | 'C' | 'c' | 'D' | 'd';
+export type Allele = 'A' | 'a' | 'B' | 'b' | 'C' | 'c' | 'D' | 'd' | 'E' | 'e' | 'F' | 'f';
 export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 
 export interface GenePair {
@@ -19,12 +19,24 @@ export interface GenePair {
 }
 
 export interface PlantGenetics {
-  color: GenePair;       
-  size: GenePair;        
-  growthRate: GenePair;  
-  yield: GenePair;       
+  color: GenePair;          // A/a: 1-5 colore (rosso -> giallo -> viola -> arancio -> marrone)
+  size: GenePair;           // B/b: 1-5 dimensione frutti/foglie (piccolissimo -> gigante)
+  growthRate: GenePair;     // C/c: velocità crescita
+  yield: GenePair;          // D/d: quantità frutti
+  shape: GenePair;          // E/e: 1-5 forma (rotondo -> allungato)
+  texture: GenePair;        // F/f: 1-5 texture (liscio -> ruvido/corrugato)
   generation: number;
   mutationCount: number;
+}
+
+export interface PhenotypeTraits {
+  // Punteggi da 1 a 5
+  colorScore: number;       // Determina colore base
+  sizeScore: number;        // Dimensione frutti/foglie
+  shapeScore: number;       // Forma frutti (1=rotondo, 5=allungato)
+  textureScore: number;     // Texture (1=liscio, 5=corrugato)
+  growthSpeed: number;      // Velocità (1=lenta, 5=velocissima)
+  yieldAmount: number;      // Quantità (1=pochi, 5=tantissimi)
 }
 
 export interface Plant {
@@ -33,6 +45,7 @@ export interface Plant {
   variety: Variety;
   name: string;
   genetics: PlantGenetics;
+  phenotype: PhenotypeTraits;  // Calcolato dalla genetica
   stage: GrowthStage;
   plantedAt: number; 
   lastWateredAt: number; 
@@ -48,6 +61,7 @@ export interface Seed {
   species: Species;
   variety: Variety;
   genetics: PlantGenetics;
+  phenotype: PhenotypeTraits;  // Calcolato dalla genetica
   name: string;
   quantity: number;
   rarity: Rarity;
@@ -79,11 +93,11 @@ export interface Pot {
   plant: Plant | null;
   size: 'Small' | 'Medium' | 'Large';
   soilQuality: number; 
-  activeFertilizer?: ConsumableType; // Traccia se il vaso ha un siero attivo
+  activeFertilizer?: ConsumableType;
 }
 
 export interface DiscoveredStrain {
-  id: string; // Es: "Tomato-Cherry-DominantColor-RecessiveSize"
+  id: string;
   species: Species;
   variety: Variety;
   name: string;
@@ -97,7 +111,7 @@ export interface GameState {
   seeds: Seed[];
   inventory: HarvestedItem[];
   consumables: Consumable[];
-  encyclopedia: Record<string, DiscoveredStrain>; // Dizionario per lookup veloce
+  encyclopedia: Record<string, DiscoveredStrain>;
   money: number;
   xp: number;
   level: number;
