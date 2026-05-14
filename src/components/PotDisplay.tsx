@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Pot } from '../types';
 import { PotSvg } from './svg/PotSvg';
 import { PlantSprite } from './svg/PlantSprite';
-import { Droplets, Scissors, Trash2 } from 'lucide-react-native';
+import { Droplets, Scissors, Trash2, Plus } from 'lucide-react-native';
+import { Theme } from '../theme/colors';
 
 interface PotDisplayProps {
   pot: Pot;
@@ -14,11 +15,7 @@ interface PotDisplayProps {
 }
 
 export const PotDisplay: React.FC<PotDisplayProps> = ({ 
-  pot, 
-  onWater, 
-  onHarvest, 
-  onClear, 
-  onPlant 
+  pot, onWater, onHarvest, onClear, onPlant 
 }) => {
   const { plant } = pot;
 
@@ -30,55 +27,56 @@ export const PotDisplay: React.FC<PotDisplayProps> = ({
             <PlantSprite 
               stage={plant.stage} 
               species={plant.species} 
-              genetics={plant.genetics}
+              variety={plant.variety}
               health={plant.health}
-              width={120} 
-              height={120} 
+              width={140} 
+              height={140} 
             />
           </View>
         )}
         <View style={styles.potWrapper}>
-          <PotSvg width={100} height={100} waterLevel={plant ? plant.waterLevel : 0} />
+          <PotSvg width={110} height={110} waterLevel={plant ? plant.waterLevel : 0} />
         </View>
       </View>
 
       <View style={styles.infoContainer}>
         {plant ? (
           <>
-            <Text style={styles.plantName}>{plant.name}</Text>
+            <Text style={styles.plantName} numberOfLines={1}>{plant.name}</Text>
             <Text style={styles.stageText}>{plant.stage}</Text>
             
-            {/* Progress Bar */}
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${plant.growthProgress}%` }]} />
+            {/* Growth Progress Bar */}
+            <View style={styles.barTrack}>
+              <View style={[styles.growthFill, { width: `${plant.growthProgress}%` }]} />
             </View>
 
-            {/* Water Bar */}
-            <View style={styles.waterTrack}>
+            {/* Water Level Bar */}
+            <View style={styles.barTrack}>
               <View style={[styles.waterFill, { width: `${plant.waterLevel}%` }]} />
             </View>
 
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.actionButton} onPress={onWater}>
-                <Droplets color="#4fc3f7" size={20} />
+              <TouchableOpacity style={[styles.actionButton, styles.waterBtn]} onPress={onWater}>
+                <Droplets color="#FFF" size={18} />
               </TouchableOpacity>
               
               {plant.stage === 'HarvestReady' && (
-                <TouchableOpacity style={[styles.actionButton, styles.harvestButton]} onPress={onHarvest}>
-                  <Scissors color="#fff" size={20} />
+                <TouchableOpacity style={[styles.actionButton, styles.harvestBtn]} onPress={onHarvest}>
+                  <Scissors color="#FFF" size={18} />
                 </TouchableOpacity>
               )}
 
               {plant.stage === 'Dead' && (
-                <TouchableOpacity style={[styles.actionButton, styles.clearButton]} onPress={onClear}>
-                  <Trash2 color="#fff" size={20} />
+                <TouchableOpacity style={[styles.actionButton, styles.clearBtn]} onPress={onClear}>
+                  <Trash2 color="#FFF" size={18} />
                 </TouchableOpacity>
               )}
             </View>
           </>
         ) : (
-          <TouchableOpacity style={styles.plantButton} onPress={onPlant}>
-            <Text style={styles.plantButtonText}>Plant Seed</Text>
+          <TouchableOpacity style={styles.emptyPotButton} onPress={onPlant}>
+            <Plus color={Theme.primary} size={24} />
+            <Text style={styles.emptyPotText}>Plant Seed</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -88,24 +86,30 @@ export const PotDisplay: React.FC<PotDisplayProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '45%',
-    backgroundColor: '#2c3e2c',
-    borderRadius: 12,
-    padding: 10,
-    margin: 8,
+    width: '47%',
+    backgroundColor: Theme.surface,
+    borderRadius: 16,
+    padding: 12,
+    marginVertical: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#4a6b4a',
+    borderColor: Theme.surfaceLight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   graphicsContainer: {
-    width: 120,
-    height: 160,
+    width: 140,
+    height: 180,
     position: 'relative',
     alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   plantWrapper: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 45,
     zIndex: 2,
   },
   potWrapper: {
@@ -116,67 +120,64 @@ const styles = StyleSheet.create({
   infoContainer: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
   },
   plantName: {
-    color: '#fff',
+    color: Theme.text,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 15,
+    marginBottom: 2,
   },
   stageText: {
-    color: '#a5d6a7',
+    color: Theme.textMuted,
     fontSize: 12,
-    marginBottom: 5,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  progressTrack: {
+  barTrack: {
     width: '100%',
-    height: 4,
-    backgroundColor: '#1b261b',
-    borderRadius: 2,
-    marginBottom: 4,
+    height: 6,
+    backgroundColor: Theme.background,
+    borderRadius: 3,
+    marginBottom: 6,
+    overflow: 'hidden',
   },
-  progressFill: {
+  growthFill: {
     height: '100%',
-    backgroundColor: '#81c784',
-    borderRadius: 2,
-  },
-  waterTrack: {
-    width: '100%',
-    height: 4,
-    backgroundColor: '#1b261b',
-    borderRadius: 2,
-    marginBottom: 10,
+    backgroundColor: Theme.primary,
+    borderRadius: 3,
   },
   waterFill: {
     height: '100%',
-    backgroundColor: '#4fc3f7',
-    borderRadius: 2,
+    backgroundColor: '#29B6F6',
+    borderRadius: 3,
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
+    gap: 10,
     width: '100%',
+    marginTop: 8,
   },
   actionButton: {
-    padding: 8,
-    backgroundColor: '#1b261b',
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  harvestButton: {
-    backgroundColor: '#f57c00',
+  waterBtn: { backgroundColor: '#0288D1' },
+  harvestBtn: { backgroundColor: Theme.secondary },
+  clearBtn: { backgroundColor: Theme.danger },
+  emptyPotButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 8,
   },
-  clearButton: {
-    backgroundColor: '#d32f2f',
-  },
-  plantButton: {
-    backgroundColor: '#388e3c',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  plantButtonText: {
-    color: '#fff',
+  emptyPotText: {
+    color: Theme.primary,
     fontWeight: 'bold',
+    fontSize: 14,
   }
 });
