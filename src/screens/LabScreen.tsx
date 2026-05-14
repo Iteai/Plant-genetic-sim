@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { useGameStore } from '../store/useGameStore';
 import { crossbreed } from '../genetics/engine';
+import { calculatePhenotype } from '../genetics/phenotype';
 import { Seed } from '../types';
 import { DnaSvg } from '../components/svg/DnaSvg';
 import { SeedPacketSvg } from '../components/svg/SeedPacketSvg';
@@ -60,6 +61,7 @@ export const LabScreen: React.FC = () => {
         variety: Math.random() > 0.5 ? parentA.variety : parentB.variety,
         name: `Hybrid ${newSpecies}`,
         genetics: newGenetics,
+        phenotype: calculatePhenotype(newGenetics, newSpecies),
         quantity: 1,
         rarity: newGenetics.mutationCount > 2 ? 'Legendary' : newGenetics.mutationCount > 0 ? 'Epic' : 'Rare'
       };
