@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Pot } from '../types';
 import { PotSvg } from './svg/PotSvg';
@@ -24,9 +24,37 @@ export const PotDisplay: React.FC<PotDisplayProps> = ({
   onFertilize,
 }) => {
   const { plant, activeFertilizer } = pot;
+  const [showLegend, setShowLegend] = useState(false);
+
+  const phenotypeLegend = [
+    { abbr: 'CLR', full: 'Color', range: '1-5 (intensity)' },
+    { abbr: 'SIZ', full: 'Size', range: '1-5 (scale)' },
+    { abbr: 'SHP', full: 'Shape', range: '1-5 (elongation)' },
+    { abbr: 'TXR', full: 'Texture', range: '1-5 (roughness)' },
+  ];
 
   return (
     <View style={[styles.container, activeFertilizer === 'Mutation' && styles.mutatedContainer]}>
+      {showLegend && (
+        <View style={styles.legendOverlay}>
+          <View style={styles.legendBox}>
+            <Text style={styles.legendTitle}>Phenotype Legend</Text>
+            {phenotypeLegend.map((item) => (
+              <View key={item.abbr} style={styles.legendRow}>
+                <Text style={styles.legendAbbr}>{item.abbr}</Text>
+                <Text style={styles.legendFull}>{item.full}</Text>
+                <Text style={styles.legendRange}>{item.range}</Text>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.legendCloseBtn}
+              onPress={() => setShowLegend(false)}
+            >
+              <Text style={styles.legendCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
       <View style={styles.graphicsContainer}>
         {plant && (
           <View style={styles.plantWrapper}>
@@ -89,24 +117,29 @@ export const PotDisplay: React.FC<PotDisplayProps> = ({
               </View>
             </View>
 
-            <View style={styles.phenotypeGrid}>
-              <View style={styles.traitBox}>
-                <Text style={styles.traitLabel}>CLR</Text>
-                <Text style={styles.traitValue}>{plant.phenotype.colorScore}</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setShowLegend(true)}
+            >
+              <View style={styles.phenotypeGrid}>
+                <View style={styles.traitBox}>
+                  <Text style={styles.traitLabel}>CLR</Text>
+                  <Text style={styles.traitValue}>{plant.phenotype.colorScore}</Text>
+                </View>
+                <View style={styles.traitBox}>
+                  <Text style={styles.traitLabel}>SIZ</Text>
+                  <Text style={styles.traitValue}>{plant.phenotype.sizeScore}</Text>
+                </View>
+                <View style={styles.traitBox}>
+                  <Text style={styles.traitLabel}>SHP</Text>
+                  <Text style={styles.traitValue}>{plant.phenotype.shapeScore}</Text>
+                </View>
+                <View style={styles.traitBox}>
+                  <Text style={styles.traitLabel}>TXR</Text>
+                  <Text style={styles.traitValue}>{plant.phenotype.textureScore}</Text>
+                </View>
               </View>
-              <View style={styles.traitBox}>
-                <Text style={styles.traitLabel}>SIZ</Text>
-                <Text style={styles.traitValue}>{plant.phenotype.sizeScore}</Text>
-              </View>
-              <View style={styles.traitBox}>
-                <Text style={styles.traitLabel}>SHP</Text>
-                <Text style={styles.traitValue}>{plant.phenotype.shapeScore}</Text>
-              </View>
-              <View style={styles.traitBox}>
-                <Text style={styles.traitLabel}>TXR</Text>
-                <Text style={styles.traitValue}>{plant.phenotype.textureScore}</Text>
-              </View>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.actionButton, styles.waterBtn]} onPress={onWater}>
@@ -298,6 +331,73 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     backgroundColor: Theme.danger,
+  },
+  legendOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legendBox: {
+    backgroundColor: '#1A2A20',
+    borderRadius: 16,
+    padding: 20,
+    width: '90%',
+    borderWidth: 1,
+    borderColor: 'rgba(24, 255, 255, 0.3)',
+  },
+  legendTitle: {
+    color: '#18FFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  legendAbbr: {
+    color: '#18FFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    width: 50,
+  },
+  legendFull: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  legendRange: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    textAlign: 'right',
+  },
+  legendCloseBtn: {
+    marginTop: 16,
+    backgroundColor: 'rgba(24, 255, 255, 0.15)',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  legendCloseText: {
+    color: '#18FFFF',
+    fontSize: 14,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   emptyPotButton: {
     alignItems: 'center',
