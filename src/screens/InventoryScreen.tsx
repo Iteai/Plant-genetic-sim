@@ -10,10 +10,20 @@ import { HarvestedItem, Seed } from '../types';
 
 export const InventoryScreen: React.FC = () => {
   const [tab, setTab] = useState<'seeds' | 'harvests'>('seeds');
+  const [showLegend, setShowLegend] = useState(false);
   const seeds = useGameStore((state) => state.seeds);
   const inventory = useGameStore((state) => state.inventory);
   const money = useGameStore((state) => state.money);
   const sellHarvest = useGameStore((state) => state.sellHarvest);
+
+  const phenotypeLegend = [
+    { abbr: 'CLR', full: 'Color', range: '1-5 (intensity)' },
+    { abbr: 'SIZ', full: 'Size', range: '1-5 (scale)' },
+    { abbr: 'SHP', full: 'Shape', range: '1-5 (elongation)' },
+    { abbr: 'TXR', full: 'Texture', range: '1-5 (roughness)' },
+    { abbr: 'GRO', full: 'Growth Speed', range: '1-5 (rate)' },
+    { abbr: 'YLD', full: 'Yield Amount', range: '1-5 (quantity)' },
+  ];
 
   const renderSeed: ListRenderItem<Seed> = ({ item }) => (
     <View style={styles.cardWrapper}>
@@ -112,8 +122,33 @@ export const InventoryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {showLegend && (
+        <View style={styles.legendOverlay}>
+          <View style={styles.legendBox}>
+            <Text style={styles.legendTitle}>Phenotype Legend</Text>
+            {phenotypeLegend.map((item) => (
+              <View key={item.abbr} style={styles.legendRow}>
+                <Text style={styles.legendAbbr}>{item.abbr}</Text>
+                <Text style={styles.legendFull}>{item.full}</Text>
+                <Text style={styles.legendRange}>{item.range}</Text>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.legendCloseBtn}
+              onPress={() => setShowLegend(false)}
+            >
+              <Text style={styles.legendCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
       <View style={styles.header}>
-        <Text style={styles.title}>Storage Archive</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.title}>Storage Archive</Text>
+          <TouchableOpacity onPress={() => setShowLegend(true)} style={styles.legendButton}>
+            <Text style={styles.legendButtonText}>?</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.moneyContainer}>
           <Coins color={Theme.secondary} size={24} />
           <Text style={styles.money}>{money}</Text>
@@ -189,11 +224,99 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 0.5,
+  },
+  legendButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(24, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(24, 255, 255, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legendButtonText: {
+    color: '#18FFFF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  legendOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  legendBox: {
+    backgroundColor: '#1A2A20',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 320,
+    borderWidth: 1,
+    borderColor: 'rgba(24, 255, 255, 0.3)',
+  },
+  legendTitle: {
+    color: '#18FFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  legendAbbr: {
+    color: '#18FFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    width: 50,
+  },
+  legendFull: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  legendRange: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    textAlign: 'right',
+  },
+  legendCloseBtn: {
+    marginTop: 16,
+    backgroundColor: 'rgba(24, 255, 255, 0.15)',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  legendCloseText: {
+    color: '#18FFFF',
+    fontSize: 14,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   moneyContainer: {
     flexDirection: 'row',
