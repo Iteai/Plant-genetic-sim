@@ -32,7 +32,14 @@ export type GrowthStage =
   | 'HarvestReady'
   | 'Dead';
 
-export type Allele = 'A' | 'a' | 'B' | 'b' | 'C' | 'c' | 'D' | 'd' | 'E' | 'e' | 'F' | 'f';
+export type Allele =
+  | 'A' | 'a'
+  | 'B' | 'b'
+  | 'C' | 'c'
+  | 'D' | 'd'
+  | 'E' | 'e'
+  | 'F' | 'f';
+
 export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 export type ConsumableType = 'Growth' | 'Mutation';
 
