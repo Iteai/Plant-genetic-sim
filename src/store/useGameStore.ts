@@ -3,12 +3,15 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GameState, Pot, Seed, HarvestedItem, Plant } from '../types';
 import { calculateOfflineProgress } from '../utils/timeUtils';
+import { SHOP_ITEMS } from '../constants/plants';
 
 interface GameActions {
   plantSeed: (potId: string, seedId: string) => void;
   waterPlant: (potId: string) => void;
   harvestPlant: (potId: string) => void;
   clearDeadPlant: (potId: string) => void;
+  buySeed: (shopItemId: string) => void;
+  sellHarvest: (harvestId: string) => void;
   processOfflineTime: () => void;
   updateGameLoop: (deltaMs: number) => void;
 }
@@ -20,49 +23,63 @@ const INITIAL_STATE: GameState = {
     { id: 'pot_1', plant: null, size: 'Small', soilQuality: 100 },
     { id: 'pot_2', plant: null, size: 'Small', soilQuality: 100 },
     { id: 'pot_3', plant: null, size: 'Small', soilQuality: 100 },
+    { id: 'pot_4', plant: null, size: 'Small', soilQuality: 100 },
   ],
-  seeds:[
-    {
-      id: 'seed_starter_tomato',
-      species: 'Tomato',
-      name: 'Basic Tomato Seed',
-      quantity: 5,
-      genetics: {
-        color: { allele1: 'A', allele2: 'A' },
-        size: { allele1: 'b', allele2: 'b' },
-        growthRate: { allele1: 'c', allele2: 'c' },
-        yield: { allele1: 'd', allele2: 'd' },
-        generation: 1,
-        mutationCount: 0
-      }
-    },
-    {
-      id: 'seed_starter_chili',
-      species: 'Chili',
-      name: 'Basic Chili Seed',
-      quantity: 5,
-      genetics: {
-        color: { allele1: 'A', allele2: 'A' },
-        size: { allele1: 'b', allele2: 'b' },
-        growthRate: { allele1: 'c', allele2: 'c' },
-        yield: { allele1: 'd', allele2: 'd' },
-        generation: 1,
-        mutationCount: 0
-      }
-    }
-  ],
-  inventory:[],
-  money: 100,
+  seeds: [],
+  inventory: [],
+  money: 50, // Start with 50 coins to buy first seeds
   xp: 0,
   level: 1,
   lastSavedAt: Date.now(),
-  encyclopedia:[],
+  encyclopedia: [],
 };
 
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
       ...INITIAL_STATE,
+
+      buySeed: (shopItemId) => set((state) => {
+        const item = SHOP_ITEMS.find(i => i.id === shopItemId);
+        if (!item || state.money < item.price) return state;
+
+        const newSeed: Seed = {
+          id: `seed_${Date.now()}_${Math.random()}`,
+          species: item.species,
+          variety: item.variety,
+          name: `${item.name} Seed`,
+          genetics: item.baseGenetics,
+          quantity: 1
+        };
+
+        const existingSeedIndex = state.seeds.findIndex(
+          s => s.variety === item.variety && s.genetics.generation === 1
+        );
+
+        const newSeeds = [...state.seeds];
+        if (existingSeedIndex >= 0) {
+          newSeeds[existingSeedIndex].quantity += 1;
+        } else {
+          newSeeds.push(newSeed);
+        }
+
+        return { money: state.money - item.price, seeds: newSeeds, lastSavedAt: Date.now() };
+      }),
+
+      sellHarvest: (harvestId) => set((state) => {
+        const itemIndex = state.inventory.findIndex(i => i.id === harvestId);
+        if (itemIndex === -1) return state;
+        
+        const item = state.inventory[itemIndex];
+        const newInventory = [...state.inventory];
+        newInventory.splice(itemIndex, 1);
+
+        return { 
+          inventory: newInventory, 
+          money: state.money + item.value,
+          lastSavedAt: Date.now() 
+        };
+      }),
 
       plantSeed: (potId, seedId) => set((state) => {
         const seedIndex = state.seeds.findIndex(s => s.id === seedId);
@@ -80,6 +97,7 @@ export const useGameStore = create<GameStore>()(
         const newPlant: Plant = {
           id: `plant_${Date.now()}`,
           species: seed.species,
+          variety: seed.variety,
           name: seed.name.replace(' Seed', ''),
           genetics: seed.genetics,
           stage: 'Seed',
@@ -102,14 +120,7 @@ export const useGameStore = create<GameStore>()(
       waterPlant: (potId) => set((state) => {
         const newPots = state.pots.map(pot => {
           if (pot.id === potId && pot.plant) {
-            return {
-              ...pot,
-              plant: {
-                ...pot.plant,
-                waterLevel: 100,
-                lastWateredAt: Date.now()
-              }
-            };
+            return { ...pot, plant: { ...pot.plant, waterLevel: 100, lastWateredAt: Date.now() } };
           }
           return pot;
         });
@@ -121,68 +132,49 @@ export const useGameStore = create<GameStore>()(
         if (!pot || !pot.plant || pot.plant.stage !== 'HarvestReady') return state;
 
         const plant = pot.plant;
+        
+        // Base value depends on variety rarity
+        const baseValues: Record<string, number> = {
+          'Cherry': 15, 'Roma': 20, 'Beefsteak': 35, 'Heirloom': 60, 'San Marzano': 45,
+          'Jalapeno': 18, 'Habanero': 30, 'Cayenne': 25, 'Poblano': 35, 'Ghost Pepper': 80,
+          'Sweet': 12, 'Thai': 20, 'Lemon': 25, 'Purple': 40, 'Holy': 50,
+          'Cherry Belle': 8, 'French Breakfast': 15, 'Daikon': 25, 'Black Spanish': 30, 'Watermelon': 55
+        };
+
+        const baseValue = baseValues[plant.variety] || 10;
+
         const harvestedItem: HarvestedItem = {
           id: `harvest_${Date.now()}`,
           species: plant.species,
+          variety: plant.variety,
           quality: plant.health,
           quantity: plant.yieldAmount,
-          value: Math.floor((plant.health / 100) * 10 * plant.yieldAmount)
+          value: Math.floor((plant.health / 100) * baseValue * plant.yieldAmount)
         };
 
-        // Generate seeds from harvest based on genetics
-        const newSeed: Seed = {
-          id: `seed_${Date.now()}`,
-          species: plant.species,
-          name: `${plant.name} Seed`,
-          genetics: plant.genetics,
-          quantity: Math.max(1, Math.floor(plant.yieldAmount / 2))
-        };
-
-        // Check if seed exists to stack
-        const existingSeedIndex = state.seeds.findIndex(
-          s => JSON.stringify(s.genetics) === JSON.stringify(newSeed.genetics) && s.species === newSeed.species
-        );
-
-        const newSeeds = [...state.seeds];
-        if (existingSeedIndex >= 0) {
-          newSeeds[existingSeedIndex].quantity += newSeed.quantity;
-        } else {
-          newSeeds.push(newSeed);
-        }
-
-        const newPots = state.pots.map(p => 
-          p.id === potId ? { ...p, plant: null } : p
-        );
+        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null } : p);
 
         return {
           pots: newPots,
           inventory: [...state.inventory, harvestedItem],
-          seeds: newSeeds,
           xp: state.xp + 50,
           lastSavedAt: Date.now()
         };
       }),
 
       clearDeadPlant: (potId) => set((state) => {
-        const newPots = state.pots.map(p => 
-          p.id === potId ? { ...p, plant: null } : p
-        );
+        const newPots = state.pots.map(p => p.id === potId ? { ...p, plant: null } : p);
         return { pots: newPots, lastSavedAt: Date.now() };
       }),
 
       processOfflineTime: () => set((state) => {
         const now = Date.now();
         const timeDeltaMs = now - state.lastSavedAt;
-        
-        // Prevent processing if time delta is negative (clock changed) or too small
         if (timeDeltaMs < 1000) return state;
 
         const updatedPots = state.pots.map(pot => {
           if (!pot.plant) return pot;
-          return {
-            ...pot,
-            plant: calculateOfflineProgress(pot.plant, timeDeltaMs)
-          };
+          return { ...pot, plant: calculateOfflineProgress(pot.plant, timeDeltaMs) };
         });
 
         return { pots: updatedPots, lastSavedAt: now };
@@ -191,10 +183,7 @@ export const useGameStore = create<GameStore>()(
       updateGameLoop: (deltaMs) => set((state) => {
         const updatedPots = state.pots.map(pot => {
           if (!pot.plant) return pot;
-          return {
-            ...pot,
-            plant: calculateOfflineProgress(pot.plant, deltaMs)
-          };
+          return { ...pot, plant: calculateOfflineProgress(pot.plant, deltaMs) };
         });
         return { pots: updatedPots, lastSavedAt: Date.now() };
       })
@@ -203,10 +192,7 @@ export const useGameStore = create<GameStore>()(
       name: 'mendels-garden-storage',
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Automatically process offline time when the store loads
-          state.processOfflineTime();
-        }
+        if (state) state.processOfflineTime();
       },
     }
   )
