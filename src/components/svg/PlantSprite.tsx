@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Svg, { Path, Circle, G, Defs, RadialGradient, LinearGradient, Stop, Ellipse } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { GrowthStage, Species, Variety } from '../../types';
+
+const AnimatedG = Animated.createAnimatedComponent(G);
 
 interface PlantSpriteProps {
   stage: GrowthStage;
@@ -12,221 +15,217 @@ interface PlantSpriteProps {
 }
 
 export const PlantSprite: React.FC<PlantSpriteProps> = ({ 
-  stage, species, variety, health, width = 140, height = 140 
+  stage, species, variety, health, width = 160, height = 160 
 }) => {
   const isDead = stage === 'Dead' || health === 0;
   
-  // Dynamic Colors based on Variety and Health
-  const stemColor = isDead ? '#5D4037' : 
-    (variety === 'Thai' || variety === 'Purple' ? '#6A1B9A' : 
-     variety === 'Lemon' ? '#7CB342' : '#2E7D32');
-     
-  const leafColor = isDead ? '#8D6E63' : 
-    (variety === 'Purple' ? '#4A148C' : 
-     variety === 'Lemon' ? '#AED581' : 
-     variety === 'Poblano' ? '#1B5E20' : 
-     variety === 'Heirloom' ? '#388E3C' : '#4CAF50');
+  // Organic Wind Animation
+  const sway = useSharedValue(0);
+  const breathe = useSharedValue(1);
 
-  const leafHighlight = isDead ? '#A1887F' :
-    (variety === 'Purple' ? '#7B1FA2' : 
-     variety === 'Lemon' ? '#C5E1A5' : '#81C784');
+  useEffect(() => {
+    if (!isDead) {
+      sway.value = withRepeat(
+        withSequence(
+          withTiming(2, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+          withTiming(-2, { duration: 3000, easing: Easing.inOut(Easing.sin) })
+        ), -1, true
+      );
+      breathe.value = withRepeat(
+        withSequence(
+          withTiming(1.02, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.98, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+        ), -1, true
+      );
+    }
+  }, [isDead]);
 
-  // --- LEAF GENERATOR ---
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotateZ: `${sway.value}deg` },
+      { scaleY: breathe.value },
+      { scaleX: breathe.value }
+    ],
+  }));
+
+  // Premium Color Palettes
+  const stemColor = isDead ? '#4E342E' : (variety === 'Thai' || variety === 'Purple' ? '#4A148C' : variety === 'Lemon' ? '#558B2F' : '#1B5E20');
+  const leafBase = isDead ? '#6D4C41' : (variety === 'Purple' ? '#311B92' : variety === 'Lemon' ? '#8BC34A' : variety === 'Poblano' ? '#004D40' : '#2E7D32');
+  const leafHighlight = isDead ? '#8D6E63' : (variety === 'Purple' ? '#512DA8' : variety === 'Lemon' ? '#AED581' : '#4CAF50');
+  const leafShadow = isDead ? '#3E2723' : (variety === 'Purple' ? '#1A237E' : '#1B5E20');
+
+  // --- PREMIUM LEAF GENERATOR ---
   const renderLeaf = (x: number, y: number, rotation: number, scale: number) => {
     let path = "";
+    let veinPath = "";
+    
     if (species === 'Tomato') {
-      // Jagged, compound-like leaf
-      path = `M 0 0 C 10 -15 25 -10 30 -5 C 25 0 35 5 25 10 C 15 15 5 5 0 0`;
+      // Complex lobed leaf
+      path = `M 0 0 C 15 -20 35 -15 40 -5 C 35 5 45 15 30 20 C 15 25 5 10 0 0`;
+      veinPath = `M 0 0 Q 20 0 38 -2 M 10 0 Q 15 -8 20 -12 M 15 2 Q 20 10 25 14`;
     } else if (species === 'Basil') {
-      // Cupped, smooth oval leaf
-      path = `M 0 0 C 10 -20 30 -15 35 0 C 30 15 10 20 0 0`;
+      // Cupped, elegant oval
+      path = `M 0 0 C 15 -25 40 -20 45 0 C 40 20 15 25 0 0`;
+      veinPath = `M 0 0 Q 25 0 42 0 M 10 0 Q 15 -10 25 -12 M 10 0 Q 15 10 25 12 M 20 0 Q 25 -8 32 -10 M 20 0 Q 25 8 32 10`;
     } else if (species === 'Chili') {
-      // Pointed, sleek leaf
-      path = `M 0 0 C 15 -10 30 -5 40 0 C 30 5 15 10 0 0`;
+      // Sleek, lanceolate leaf
+      path = `M 0 0 C 20 -15 40 -5 50 0 C 40 5 20 15 0 0`;
+      veinPath = `M 0 0 Q 25 0 48 0 M 15 0 Q 25 -5 35 -5 M 15 0 Q 25 5 35 5`;
     } else {
-      // Radish: Lobed leaf
-      path = `M 0 0 C 5 -15 15 -20 20 -10 C 25 -20 35 -15 30 0 C 35 15 25 20 20 10 C 15 20 5 15 0 0`;
+      // Radish: Lyrate leaf
+      path = `M 0 0 C 5 -20 20 -25 25 -10 C 35 -25 50 -15 45 5 C 50 25 35 30 25 15 C 20 30 5 25 0 0`;
+      veinPath = `M 0 0 Q 25 5 42 5 M 15 2 Q 20 -10 30 -15 M 15 4 Q 20 15 30 20`;
     }
 
     return (
       <G x={x} y={y} rotation={rotation} scale={scale}>
-        <Path d={path} fill={leafColor} />
-        {/* Leaf Vein / Highlight */}
-        <Path d={`M 0 0 L ${species === 'Chili' ? '35' : '25'} 0`} stroke={leafHighlight} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        {/* Drop Shadow */}
+        <Path d={path} fill="rgba(0,0,0,0.2)" transform="translate(2, 4)" />
+        {/* Base Leaf */}
+        <Path d={path} fill={leafBase} />
+        {/* Inner Highlight for 3D Cupping */}
+        <Path d={path} fill={leafHighlight} transform="scale(0.85) translate(2, 0)" opacity="0.8" />
+        {/* Veins */}
+        <Path d={veinPath} stroke={leafShadow} strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.6" />
       </G>
     );
   };
 
-  // --- FLOWER GENERATOR ---
-  const renderFlower = (x: number, y: number, scale: number) => {
-    if (isDead) return null;
-    const petalColor = species === 'Tomato' ? '#FFEE58' : 
-                       species === 'Chili' ? '#FFFFFF' : 
-                       variety === 'Thai' || variety === 'Purple' ? '#CE93D8' : '#FCE4EC';
-    const centerColor = species === 'Tomato' ? '#F57F17' : '#FFF59D';
-
-    return (
-      <G x={x} y={y} scale={scale}>
-        <Circle cx="0" cy="-5" r="4" fill={petalColor} />
-        <Circle cx="5" cy="-1" r="4" fill={petalColor} />
-        <Circle cx="3" cy="5" r="4" fill={petalColor} />
-        <Circle cx="-3" cy="5" r="4" fill={petalColor} />
-        <Circle cx="-5" cy="-1" r="4" fill={petalColor} />
-        <Circle cx="0" cy="0" r="3" fill={centerColor} />
-      </G>
-    );
-  };
-
-  // --- FRUIT / ROOT GENERATOR ---
+  // --- PREMIUM FRUIT GENERATOR ---
   const renderFruit = (x: number, y: number, scale: number) => {
-    if (isDead || species === 'Basil') return null; // Basil is harvested for leaves
+    if (isDead || species === 'Basil') return null;
 
     return (
       <G x={x} y={y} scale={scale}>
+        {/* Drop Shadow */}
+        <Ellipse cx="0" cy="15" rx="10" ry="4" fill="rgba(0,0,0,0.3)" />
+
         {/* TOMATOES */}
         {variety === 'Cherry' && (
           <G>
-            <Circle cx="-4" cy="0" r="5" fill="url(#cherryGrad)" />
-            <Circle cx="4" cy="4" r="5" fill="url(#cherryGrad)" />
-            <Circle cx="0" cy="-5" r="5" fill="url(#cherryGrad)" />
+            <Circle cx="-6" cy="0" r="7" fill="url(#cherryGrad)" />
+            <Circle cx="6" cy="5" r="7" fill="url(#cherryGrad)" />
+            <Circle cx="0" cy="-7" r="7" fill="url(#cherryGrad)" />
+            {/* Specular Highlights */}
+            <Circle cx="-8" cy="-2" r="2" fill="#FFFFFF" opacity="0.6" />
+            <Circle cx="4" cy="3" r="2" fill="#FFFFFF" opacity="0.6" />
+            <Circle cx="-2" cy="-9" r="2" fill="#FFFFFF" opacity="0.6" />
           </G>
         )}
-        {variety === 'Roma' && <Ellipse cx="0" cy="0" rx="6" ry="10" fill="url(#romaGrad)" />}
-        {variety === 'Beefsteak' && <Path d="M -10 0 C -10 -10, -4 -12, 0 -8 C 4 -12, 10 -10, 10 0 C 10 10, 4 12, 0 8 C -4 12, -10 10, -10 0" fill="url(#beefGrad)" />}
-        {variety === 'Heirloom' && <Path d="M -12 0 C -12 -8, -5 -10, 0 -6 C 5 -10, 12 -8, 12 0 C 12 8, 5 10, 0 6 C -5 10, -12 8, -12 0" fill="url(#heirloomGrad)" />}
-        {variety === 'San Marzano' && <Ellipse cx="0" cy="0" rx="5" ry="14" fill="url(#romaGrad)" />}
+        {variety === 'Roma' && (
+          <G>
+            <Ellipse cx="0" cy="0" rx="8" ry="14" fill="url(#romaGrad)" />
+            <Ellipse cx="-3" cy="-4" rx="2" ry="4" fill="#FFFFFF" opacity="0.5" transform="rotate(-15)" />
+          </G>
+        )}
+        {variety === 'Beefsteak' && (
+          <G>
+            <Path d="M -14 0 C -14 -12, -6 -16, 0 -10 C 6 -16, 14 -12, 14 0 C 14 12, 6 16, 0 10 C -6 16, -14 12, -14 0" fill="url(#beefGrad)" />
+            <Path d="M -8 -4 C -6 -8, -2 -8, 0 -4" stroke="#FFFFFF" strokeWidth="2" fill="none" opacity="0.5" strokeLinecap="round" />
+          </G>
+        )}
 
         {/* CHILIES */}
-        {variety === 'Jalapeno' && <Path d="M -4 0 Q 0 18 4 0 Z" fill="url(#jalapenoGrad)" />}
-        {variety === 'Habanero' && <Path d="M -6 0 C -10 10, 10 10, 6 0 C 4 -5, -4 -5, -6 0" fill="url(#habaneroGrad)" />}
-        {variety === 'Cayenne' && <Path d="M -2 0 Q 8 20 -2 30 Q -6 20 -2 0" fill="url(#cayenneGrad)" />}
-        {variety === 'Poblano' && <Path d="M -8 0 Q 0 20 8 0 Q 10 -5 -8 0" fill="url(#poblanoGrad)" />}
-        {variety === 'Ghost Pepper' && <Path d="M -5 0 Q 6 12 -3 22 Q -10 12 -5 0" fill="url(#ghostGrad)" />}
+        {variety === 'Jalapeno' && (
+          <G>
+            <Path d="M -5 0 Q 0 22 5 0 Z" fill="url(#jalapenoGrad)" />
+            <Path d="M -2 2 Q 0 15 1 18" stroke="#FFFFFF" strokeWidth="1.5" fill="none" opacity="0.4" strokeLinecap="round" />
+          </G>
+        )}
+        {variety === 'Habanero' && (
+          <G>
+            <Path d="M -8 0 C -12 12, 12 12, 8 0 C 5 -6, -5 -6, -8 0" fill="url(#habaneroGrad)" />
+            <Circle cx="-3" cy="2" r="2" fill="#FFFFFF" opacity="0.6" />
+          </G>
+        )}
 
-        {/* RADISHES (Drawn at the base) */}
-        {variety === 'Cherry Belle' && <Circle cx="0" cy="0" r="14" fill="url(#cherryBelleGrad)" />}
-        {variety === 'French Breakfast' && <Path d="M -9 -5 L 9 -5 L 7 18 L -7 18 Z" fill="url(#frenchGrad)" />}
-        {variety === 'Daikon' && <Path d="M -7 -5 L 7 -5 L 3 35 L -3 35 Z" fill="url(#daikonGrad)" stroke="#E0E0E0" strokeWidth="0.5" />}
-        {variety === 'Black Spanish' && <Circle cx="0" cy="0" r="16" fill="url(#blackRadishGrad)" />}
-        {variety === 'Watermelon' && <Circle cx="0" cy="0" r="15" fill="url(#watermelonGrad)" stroke="#E91E63" strokeWidth="2" />}
+        {/* RADISHES */}
+        {variety === 'Cherry Belle' && (
+          <G>
+            <Circle cx="0" cy="0" r="18" fill="url(#cherryBelleGrad)" />
+            <Circle cx="-6" cy="-6" r="4" fill="#FFFFFF" opacity="0.4" />
+          </G>
+        )}
         
-        {/* Stem connection for fruits */}
-        {species !== 'Radish' && <Path d="M 0 -8 L 0 0" stroke={stemColor} strokeWidth="2" />}
+        {/* Stem connection */}
+        {species !== 'Radish' && <Path d="M 0 -12 L 0 0" stroke={stemColor} strokeWidth="2.5" strokeLinecap="round" />}
+        {/* Calyx (Little green leaves on top of fruit) */}
+        {species !== 'Radish' && <Path d="M -4 -2 L 0 -6 L 4 -2 L 0 0 Z" fill={leafBase} />}
       </G>
     );
   };
 
   const renderPlant = () => {
-    if (stage === 'Seed') return <Ellipse cx="70" cy="130" rx="4" ry="2.5" fill="#D7CCC8" />;
-    if (stage === 'Germination') {
-      return (
-        <G>
-          <Path d="M 70 130 Q 65 115 70 110" stroke={stemColor} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          {renderLeaf(70, 110, -30, 0.4)}
-          {renderLeaf(70, 110, 210, 0.4)}
-        </G>
-      );
-    }
-
+    if (stage === 'Seed') return <Ellipse cx="80" cy="145" rx="5" ry="3" fill="#8D6E63" />;
+    
     const isRadish = species === 'Radish';
-    const stemHeight = isRadish ? 110 : (stage === 'Seedling' ? 80 : 40);
-    const fruitScale = stage === 'HarvestReady' ? 1.3 : 0.8;
+    const stemHeight = isRadish ? 120 : (stage === 'Seedling' ? 90 : 40);
+    const fruitScale = stage === 'HarvestReady' ? 1.4 : 0.9;
 
     return (
-      <G>
+      <AnimatedG style={animatedStyle} originX={80} originY={150}>
         <Defs>
-          {/* Fruit Gradients for 3D effect */}
-          <RadialGradient id="cherryGrad" cx="30%" cy="30%" r="70%">
+          {/* Premium 3D Gradients with offset focal points for realism */}
+          <RadialGradient id="cherryGrad" cx="30%" cy="30%" r="70%" fx="20%" fy="20%">
             <Stop offset="0%" stopColor="#FF8A80" />
-            <Stop offset="100%" stopColor="#D32F2F" />
+            <Stop offset="70%" stopColor="#D32F2F" />
+            <Stop offset="100%" stopColor="#880E4F" />
           </RadialGradient>
-          <RadialGradient id="romaGrad" cx="30%" cy="30%" r="70%">
+          <RadialGradient id="romaGrad" cx="35%" cy="30%" r="70%" fx="25%" fy="25%">
             <Stop offset="0%" stopColor="#FF5252" />
-            <Stop offset="100%" stopColor="#B71C1C" />
+            <Stop offset="80%" stopColor="#B71C1C" />
+            <Stop offset="100%" stopColor="#4A0404" />
           </RadialGradient>
-          <RadialGradient id="beefGrad" cx="30%" cy="30%" r="70%">
+          <RadialGradient id="beefGrad" cx="30%" cy="20%" r="80%" fx="30%" fy="20%">
             <Stop offset="0%" stopColor="#FF5252" />
-            <Stop offset="100%" stopColor="#C62828" />
-          </RadialGradient>
-          <RadialGradient id="heirloomGrad" cx="30%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#AB47BC" />
-            <Stop offset="100%" stopColor="#4A148C" />
+            <Stop offset="60%" stopColor="#C62828" />
+            <Stop offset="100%" stopColor="#3E0000" />
           </RadialGradient>
           
           <LinearGradient id="jalapenoGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#4CAF50" />
+            <Stop offset="0%" stopColor="#81C784" />
+            <Stop offset="40%" stopColor="#2E7D32" />
             <Stop offset="100%" stopColor="#1B5E20" />
           </LinearGradient>
-          <RadialGradient id="habaneroGrad" cx="30%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#FFB74D" />
+          <RadialGradient id="habaneroGrad" cx="30%" cy="30%" r="70%" fx="20%" fy="20%">
+            <Stop offset="0%" stopColor="#FFE082" />
+            <Stop offset="50%" stopColor="#FF8F00" />
             <Stop offset="100%" stopColor="#E65100" />
           </RadialGradient>
-          <LinearGradient id="cayenneGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#FF5252" />
-            <Stop offset="100%" stopColor="#B71C1C" />
-          </LinearGradient>
-          <LinearGradient id="poblanoGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#2E7D32" />
-            <Stop offset="100%" stopColor="#000000" />
-          </LinearGradient>
-          <RadialGradient id="ghostGrad" cx="30%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#FF1744" />
-            <Stop offset="100%" stopColor="#880E4F" />
-          </RadialGradient>
 
-          <RadialGradient id="cherryBelleGrad" cx="30%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#FF4081" />
-            <Stop offset="100%" stopColor="#C2185B" />
-          </RadialGradient>
-          <LinearGradient id="frenchGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#E91E63" />
-            <Stop offset="60%" stopColor="#E91E63" />
-            <Stop offset="100%" stopColor="#FFFFFF" />
-          </LinearGradient>
-          <LinearGradient id="daikonGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#FFFFFF" />
-            <Stop offset="100%" stopColor="#F5F5F5" />
-          </LinearGradient>
-          <RadialGradient id="blackRadishGrad" cx="30%" cy="30%" r="70%">
-            <Stop offset="0%" stopColor="#757575" />
-            <Stop offset="100%" stopColor="#212121" />
-          </RadialGradient>
-          <RadialGradient id="watermelonGrad" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor="#AED581" />
-            <Stop offset="100%" stopColor="#7CB342" />
+          <RadialGradient id="cherryBelleGrad" cx="30%" cy="30%" r="70%" fx="25%" fy="25%">
+            <Stop offset="0%" stopColor="#FF80AB" />
+            <Stop offset="60%" stopColor="#D81B60" />
+            <Stop offset="100%" stopColor="#880E4F" />
           </RadialGradient>
         </Defs>
 
-        {/* Main Stem */}
-        {!isRadish && <Path d={`M 70 130 Q 75 80 70 ${stemHeight}`} stroke={stemColor} strokeWidth="5" fill="none" strokeLinecap="round" />}
-        {isRadish && <Path d={`M 70 130 L 70 110`} stroke={stemColor} strokeWidth="4" fill="none" />}
+        {/* Main Stem with 3D shading */}
+        {!isRadish && (
+          <G>
+            <Path d={`M 80 150 Q 85 90 80 ${stemHeight}`} stroke="#1B5E20" strokeWidth="7" fill="none" strokeLinecap="round" />
+            <Path d={`M 80 150 Q 85 90 80 ${stemHeight}`} stroke={stemColor} strokeWidth="5" fill="none" strokeLinecap="round" />
+          </G>
+        )}
+        {isRadish && <Path d={`M 80 150 L 80 120`} stroke={stemColor} strokeWidth="6" fill="none" strokeLinecap="round" />}
 
         {/* Leaves */}
         {stage !== 'Seedling' && !isRadish && (
           <G>
-            {renderLeaf(70, 100, -25, 0.8)}
-            {renderLeaf(70, 85, 205, 0.9)}
-            {renderLeaf(72, 65, -15, 1.1)}
-            {renderLeaf(68, 50, 195, 1.0)}
-            {stage !== 'Vegetative' && renderLeaf(70, 40, -45, 0.7)}
-            {stage !== 'Vegetative' && renderLeaf(70, 40, 225, 0.7)}
+            {renderLeaf(80, 110, -20, 0.9)}
+            {renderLeaf(80, 95, 200, 1.0)}
+            {renderLeaf(82, 75, -10, 1.2)}
+            {renderLeaf(78, 60, 190, 1.1)}
+            {stage !== 'Vegetative' && renderLeaf(80, 45, -35, 0.8)}
+            {stage !== 'Vegetative' && renderLeaf(80, 45, 215, 0.8)}
           </G>
         )}
         {stage !== 'Seedling' && isRadish && (
           <G>
-            {renderLeaf(70, 115, -50, 1.2)}
-            {renderLeaf(70, 115, 230, 1.2)}
-            {renderLeaf(70, 110, -90, 1.4)}
-            {renderLeaf(70, 110, 270, 1.0)}
-          </G>
-        )}
-
-        {/* Flowers */}
-        {stage === 'Flowering' && !isRadish && (
-          <G>
-            {renderFlower(50, 75, 1)}
-            {renderFlower(90, 60, 1)}
-            {renderFlower(65, 40, 1)}
+            {renderLeaf(80, 125, -45, 1.3)}
+            {renderLeaf(80, 125, 225, 1.3)}
+            {renderLeaf(80, 120, -85, 1.5)}
+            {renderLeaf(80, 120, 265, 1.1)}
           </G>
         )}
 
@@ -234,22 +233,22 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
         {(stage === 'Fruiting' || stage === 'HarvestReady') && (
           <G>
             {isRadish ? (
-              renderFruit(70, 125, fruitScale)
+              renderFruit(80, 135, fruitScale)
             ) : species !== 'Basil' ? (
               <G>
-                {renderFruit(45, 80, fruitScale)}
-                {renderFruit(95, 65, fruitScale)}
-                {renderFruit(60, 45, fruitScale)}
+                {renderFruit(50, 90, fruitScale)}
+                {renderFruit(110, 75, fruitScale)}
+                {renderFruit(70, 50, fruitScale)}
               </G>
             ) : null}
           </G>
         )}
-      </G>
+      </AnimatedG>
     );
   };
 
   return (
-    <Svg width={width} height={height} viewBox="0 0 140 140">
+    <Svg width={width} height={height} viewBox="0 0 160 160">
       {renderPlant()}
     </Svg>
   );
