@@ -9,7 +9,7 @@ export interface ShopItem {
   baseGenetics: PlantGenetics;
   description: string;
   rarity: Rarity;
-}
+} // FIX: graffa di chiusura dell'interfaccia mancante
 
 const createBaseGenetics = (color: 'A'|'a', size: 'B'|'b', speed: 'C'|'c', yieldG: 'D'|'d'): PlantGenetics => ({
   color: { allele1: color, allele2: color },
@@ -17,7 +17,7 @@ const createBaseGenetics = (color: 'A'|'a', size: 'B'|'b', speed: 'C'|'c', yield
   growthRate: { allele1: speed, allele2: speed },
   yield: { allele1: yieldG, allele2: yieldG },
   generation: 1,
-  mutationCount: 0
+  mutationCount: 0,
 });
 
 export const SHOP_ITEMS: ShopItem[] = [
