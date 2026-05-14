@@ -1,4 +1,4 @@
-import { Species, Variety, PlantGenetics, Rarity, Allele } from '../types';
+import { Species, Variety, PlantGenetics, Rarity, GenePair } from '../types';
 
 export interface ShopItem {
   id: string;
@@ -11,25 +11,25 @@ export interface ShopItem {
   rarity: Rarity;
 }
 
-const createGenePair = (allele1: Allele, allele2: Allele) => ({
+const pair = <T extends GenePair['allele1']>(allele1: T, allele2: T): GenePair => ({
   allele1,
   allele2,
 });
 
 const createBaseGenetics = (
-  color: [Allele, Allele],
-  size: [Allele, Allele],
-  speed: [Allele, Allele],
-  yieldGene: [Allele, Allele],
-  shape: [Allele, Allele],
-  texture: [Allele, Allele]
+  color: GenePair,
+  size: GenePair,
+  speed: GenePair,
+  yieldG: GenePair,
+  shape: GenePair,
+  texture: GenePair
 ): PlantGenetics => ({
-  color: createGenePair(color[0], color[1]),
-  size: createGenePair(size[0], size[1]),
-  growthRate: createGenePair(speed[0], speed[1]),
-  yield: createGenePair(yieldGene[0], yieldGene[1]),
-  shape: createGenePair(shape[0], shape[1]),
-  texture: createGenePair(texture[0], texture[1]),
+  color,
+  size,
+  growthRate: speed,
+  yield: yieldG,
+  shape,
+  texture,
   generation: 1,
   mutationCount: 0,
 });
@@ -43,7 +43,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 10,
     rarity: 'Common',
     description: 'Fast growing, small clusters of sweet fruits.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['b', 'b'], ['C', 'C'], ['d', 'd'], ['E', 'E'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('b', 'b'),
+      pair('C', 'C'),
+      pair('d', 'd'),
+      pair('E', 'E'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_tom_roma',
@@ -53,7 +60,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 15,
     rarity: 'Common',
     description: 'Classic oval paste tomato. Great yield.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['B', 'b'], ['C', 'C'], ['D', 'D'], ['e', 'e'], ['F', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('B', 'b'),
+      pair('C', 'C'),
+      pair('D', 'D'),
+      pair('e', 'e'),
+      pair('f', 'f')
+    ),
   },
   {
     id: 'shop_tom_sanmarzano',
@@ -63,7 +77,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 30,
     rarity: 'Rare',
     description: 'Elongated, highly prized for sauces.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['B', 'b'], ['c', 'c'], ['D', 'D'], ['e', 'e'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('B', 'B'),
+      pair('b', 'b'),
+      pair('D', 'D'),
+      pair('e', 'e'),
+      pair('f', 'f')
+    ),
   },
   {
     id: 'shop_tom_beef',
@@ -73,7 +94,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 45,
     rarity: 'Epic',
     description: 'Huge, ribbed fruits. Slow but valuable.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['B', 'B'], ['c', 'c'], ['d', 'd'], ['E', 'E'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('B', 'B'),
+      pair('c', 'c'),
+      pair('d', 'd'),
+      pair('E', 'E'),
+      pair('f', 'f')
+    ),
   },
   {
     id: 'shop_tom_heirloom',
@@ -83,7 +111,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 80,
     rarity: 'Legendary',
     description: 'Rare, high value, unique dark colors.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'b'], ['c', 'c'], ['D', 'D'], ['E', 'E'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'b'),
+      pair('c', 'c'),
+      pair('D', 'D'),
+      pair('E', 'E'),
+      pair('f', 'f')
+    ),
   },
 
   {
@@ -94,7 +129,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 12,
     rarity: 'Common',
     description: 'Standard spicy green pepper. Reliable.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'b'], ['C', 'C'], ['D', 'd'], ['E', 'e'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'b'),
+      pair('C', 'C'),
+      pair('D', 'd'),
+      pair('E', 'e'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_chi_cayenne',
@@ -104,7 +146,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 18,
     rarity: 'Common',
     description: 'Long, thin, and fiery red.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['b', 'b'], ['C', 'C'], ['D', 'D'], ['e', 'e'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('b', 'b'),
+      pair('C', 'C'),
+      pair('D', 'D'),
+      pair('e', 'e'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_chi_poblano',
@@ -114,7 +163,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 25,
     rarity: 'Rare',
     description: 'Large, dark green, mild heat.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'B'], ['c', 'c'], ['D', 'd'], ['E', 'E'], ['F', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'B'),
+      pair('c', 'c'),
+      pair('D', 'd'),
+      pair('E', 'E'),
+      pair('F', 'f')
+    ),
   },
   {
     id: 'shop_chi_habanero',
@@ -124,7 +180,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 40,
     rarity: 'Epic',
     description: 'Very hot, orange lantern shape.',
-    baseGenetics: createBaseGenetics(['A', 'a'], ['B', 'b'], ['C', 'C'], ['D', 'D'], ['E', 'E'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'a'),
+      pair('B', 'b'),
+      pair('C', 'C'),
+      pair('D', 'D'),
+      pair('E', 'E'),
+      pair('f', 'f')
+    ),
   },
   {
     id: 'shop_chi_ghost',
@@ -134,7 +197,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 100,
     rarity: 'Legendary',
     description: 'Extremely hot, wrinkled, high value.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['B', 'b'], ['c', 'c'], ['d', 'd'], ['E', 'E'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('B', 'b'),
+      pair('c', 'c'),
+      pair('d', 'd'),
+      pair('E', 'E'),
+      pair('f', 'f')
+    ),
   },
 
   {
@@ -145,7 +215,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 8,
     rarity: 'Common',
     description: 'Classic culinary basil with cupped leaves.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['B', 'b'], ['C', 'C'], ['D', 'd'], ['E', 'E'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('B', 'b'),
+      pair('C', 'C'),
+      pair('D', 'd'),
+      pair('E', 'E'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_bas_lemon',
@@ -155,7 +232,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 14,
     rarity: 'Common',
     description: 'Light green, citrus scent.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'b'], ['C', 'C'], ['D', 'd'], ['E', 'E'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'b'),
+      pair('C', 'C'),
+      pair('D', 'd'),
+      pair('E', 'E'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_bas_thai',
@@ -165,7 +249,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 22,
     rarity: 'Rare',
     description: 'Purple stems, narrow leaves, licorice flavor.',
-    baseGenetics: createBaseGenetics(['A', 'a'], ['b', 'b'], ['C', 'C'], ['D', 'D'], ['E', 'e'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('b', 'b'),
+      pair('C', 'C'),
+      pair('D', 'D'),
+      pair('E', 'e'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_bas_purple',
@@ -175,7 +266,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 35,
     rarity: 'Epic',
     description: 'Striking dark purple leaves.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'b'], ['c', 'c'], ['D', 'D'], ['E', 'E'], ['F', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'b'),
+      pair('c', 'c'),
+      pair('D', 'D'),
+      pair('E', 'E'),
+      pair('F', 'f')
+    ),
   },
   {
     id: 'shop_bas_holy',
@@ -185,7 +283,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 60,
     rarity: 'Legendary',
     description: 'Sacred herb with jagged leaves.',
-    baseGenetics: createBaseGenetics(['A', 'a'], ['B', 'b'], ['c', 'c'], ['D', 'D'], ['e', 'e'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('B', 'b'),
+      pair('c', 'c'),
+      pair('D', 'D'),
+      pair('e', 'e'),
+      pair('f', 'f')
+    ),
   },
 
   {
@@ -196,7 +301,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 5,
     rarity: 'Common',
     description: 'Fastest growing, round red root.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['b', 'b'], ['C', 'C'], ['D', 'D'], ['E', 'E'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('b', 'b'),
+      pair('C', 'C'),
+      pair('D', 'D'),
+      pair('E', 'E'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_rad_french',
@@ -206,7 +318,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 12,
     rarity: 'Common',
     description: 'Oblong, red with white tip.',
-    baseGenetics: createBaseGenetics(['A', 'A'], ['b', 'b'], ['C', 'c'], ['D', 'D'], ['E', 'e'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'A'),
+      pair('b', 'b'),
+      pair('C', 'c'),
+      pair('D', 'D'),
+      pair('E', 'e'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_rad_daikon',
@@ -216,7 +335,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 20,
     rarity: 'Rare',
     description: 'Massive long white root.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'B'], ['c', 'c'], ['D', 'D'], ['e', 'e'], ['F', 'F']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'B'),
+      pair('c', 'c'),
+      pair('D', 'D'),
+      pair('e', 'e'),
+      pair('F', 'F')
+    ),
   },
   {
     id: 'shop_rad_black',
@@ -226,7 +352,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 35,
     rarity: 'Epic',
     description: 'Round with rough black skin.',
-    baseGenetics: createBaseGenetics(['a', 'a'], ['B', 'b'], ['c', 'c'], ['D', 'd'], ['E', 'E'], ['f', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('a', 'a'),
+      pair('B', 'b'),
+      pair('c', 'c'),
+      pair('D', 'd'),
+      pair('E', 'E'),
+      pair('f', 'f')
+    ),
   },
   {
     id: 'shop_rad_watermelon',
@@ -236,6 +369,13 @@ export const SHOP_ITEMS: ShopItem[] = [
     price: 75,
     rarity: 'Legendary',
     description: 'Green outside, bright pink inside.',
-    baseGenetics: createBaseGenetics(['A', 'a'], ['B', 'b'], ['c', 'c'], ['D', 'D'], ['E', 'E'], ['F', 'f']),
+    baseGenetics: createBaseGenetics(
+      pair('A', 'a'),
+      pair('B', 'b'),
+      pair('c', 'c'),
+      pair('D', 'D'),
+      pair('E', 'E'),
+      pair('F', 'f')
+    ),
   },
 ];
