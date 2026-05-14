@@ -64,16 +64,29 @@ export const LabScreen: React.FC = () => {
         rarity: newGenetics.mutationCount > 2 ? 'Legendary' : newGenetics.mutationCount > 0 ? 'Epic' : 'Rare'
       };
 
+      // FIXED: Collect indices before modifying array
+      const idxA = seeds.findIndex(s => s.id === parentAId);
+      const idxB = seeds.findIndex(s => s.id === parentBId);
+
       useGameStore.setState((state) => {
         const newSeeds = [...state.seeds];
-        const idxA = newSeeds.findIndex(s => s.id === parentAId);
-        if (newSeeds[idxA].quantity > 1) newSeeds[idxA].quantity -= 1;
-        else newSeeds.splice(idxA, 1);
+        
+        // Remove parentA first (lower index)
+        if (idxA !== -1) {
+          if (newSeeds[idxA].quantity > 1) newSeeds[idxA].quantity -= 1;
+          else newSeeds.splice(idxA, 1);
+        }
 
-        const idxB = newSeeds.findIndex(s => s.id === parentBId);
-        if (idxB !== -1) {
-          if (newSeeds[idxB].quantity > 1) newSeeds[idxB].quantity -= 1;
-          else newSeeds.splice(idxB, 1);
+        // Adjust index for parentB if idxB was after idxA
+        let adjustedIdxB = idxB;
+        if (idxA !== -1 && idxB > idxA) {
+          adjustedIdxB = idxB - 1;
+        }
+
+        // Remove parentB
+        if (adjustedIdxB !== -1 && newSeeds[adjustedIdxB]) {
+          if (newSeeds[adjustedIdxB].quantity > 1) newSeeds[adjustedIdxB].quantity -= 1;
+          else newSeeds.splice(adjustedIdxB, 1);
         }
 
         newSeeds.push(newSeed);
@@ -252,7 +265,7 @@ const styles = StyleSheet.create({
   geneMiniText: { color: '#18FFFF', fontSize: 10, fontWeight: 'bold', letterSpacing: 2, marginBottom: 2 },
   emptySlot: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   emptySlotText: { color: 'rgba(24, 255, 255, 0.4)', fontSize: 12, textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase' },
-  scanLine: { position: 'absolute', left: 0, right: 0, top: 0, height: 2, backgroundColor: '#18FFFF', shadowColor: '#18FFFF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 8, elevation: 5 },
+  scanLine: { position: 'absolute', left: 0, right: 0, top: 0, height: 2, backgroundColor: '#18FFFF', shadowColor: '#18FFFF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 8, elevation: 6 },
   dnaCenter: { width: '20%', alignItems: 'center' },
   analysisPanel: { padding: 20, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(24, 255, 255, 0.2)', marginBottom: 30 },
   analysisTitle: { color: '#18FFFF', fontSize: 14, fontWeight: '900', textTransform: 'uppercase', marginBottom: 16, letterSpacing: 1 },
@@ -270,7 +283,7 @@ const styles = StyleSheet.create({
   seedSelectInfo: { flex: 1, marginLeft: 16 },
   seedSelectName: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
   seedSelectGen: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 4, fontWeight: 'bold' },
-  resultContent: { alignItems: 'center', padding: 30, borderRadius: 24, borderWidth: 1, borderColor: '#18FFFF', shadowColor: '#18FFFF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10 },
+  resultContent: { alignItems: 'center', padding: 30, borderRadius: 24, borderWidth: 1, borderColor: '#18FFFF', shadowColor: '#18FFFF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10, margin: 20 },
   resultHeader: { color: '#00E676', fontSize: 22, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 30 },
   resultBody: { alignItems: 'center', marginBottom: 40 },
   resultName: { color: '#FFFFFF', fontSize: 24, fontWeight: '900', marginTop: 24 },
