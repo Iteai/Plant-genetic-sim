@@ -1,12 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import Svg, { Path, Circle, G, Ellipse } from 'react-native-svg';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 import { GrowthStage, Species, Variety, PlantGenetics } from '../../types';
 import {
   calculatePhenotype,
@@ -16,7 +9,7 @@ import {
   getTextureDetails,
 } from '../../genetics/phenotype';
 
-const AnimatedG = Animated.createAnimatedComponent(G);
+
 
 interface PlantSpriteProps {
   stage: GrowthStage;
@@ -39,27 +32,6 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
 }) => {
   const isDead = stage === 'Dead' || health <= 0;
   const phenotype = useMemo(() => calculatePhenotype(genetics, species), [genetics, species]);
-
-  const breathe = useSharedValue(1);
-
-  useEffect(() => {
-    if (!isDead) {
-      breathe.value = withRepeat(
-        withTiming(1.03, {
-          duration: 2500,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1,
-        true
-      );
-    } else {
-      breathe.value = 1;
-    }
-  }, [isDead, breathe]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: breathe.value }, { scaleY: breathe.value }],
-  }));
 
   const leafColor = isDead ? '#6D4C41' : getColorFromScore(species, variety, phenotype.colorScore);
   const leafHighlight = isDead ? '#8D6E63' : phenotype.colorScore > 3 ? '#FFE082' : '#A5D6A7';
@@ -234,7 +206,7 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
     const fruitScale = stage === 'HarvestReady' ? 1.4 : 0.9;
 
     return (
-      <AnimatedG style={animatedStyle} originX={80} originY={150}>
+      <G>
         {!isRadish && (
           <G>
             <Path
@@ -311,7 +283,7 @@ export const PlantSprite: React.FC<PlantSpriteProps> = ({
             ) : null}
           </G>
         )}
-      </AnimatedG>
+      </G>
     );
   };
 
