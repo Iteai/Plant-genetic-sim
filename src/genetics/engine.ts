@@ -42,8 +42,10 @@ export const crossbreed = (
     size: combineGenes(parentA.size, parentB.size),
     growthRate: combineGenes(parentA.growthRate, parentB.growthRate),
     yield: combineGenes(parentA.yield, parentB.yield),
+    shape: combineGenes(parentA.shape, parentB.shape),
+    texture: combineGenes(parentA.texture, parentB.texture),
     generation: Math.max(parentA.generation, parentB.generation) + 1,
-    mutationCount: baseMutations // Will increment if we detect a new mutation below
+    mutationCount: baseMutations
   };
 
   // Simple mutation counter check (comparing to parents)
