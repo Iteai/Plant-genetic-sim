@@ -1,6 +1,8 @@
 import { Consumable } from '../types';
 
 export const SHOP_CONSUMABLES: Omit<Consumable, 'quantity'>[] = [
+  // FIX: Omit<Consumable, 'quantity'> con parametri generici corretti
+  // FIX: graffa di apertura { aggiunta al primo oggetto
   {
     id: 'cons_growth_1',
     name: 'Chrono-Fertilizer',
@@ -14,5 +16,5 @@ export const SHOP_CONSUMABLES: Omit<Consumable, 'quantity'>[] = [
     type: 'Mutation',
     description: 'Apply to a pot. Guarantees +1 genetic mutation upon harvest.',
     price: 150,
-  }
+  }, // FIX: graffa di chiusura } aggiunta al secondo oggetto
 ];
