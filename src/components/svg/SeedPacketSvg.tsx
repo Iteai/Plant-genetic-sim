@@ -1,5 +1,4 @@
 import React from 'react';
-// FIX: Circle aggiunto agli import da react-native-svg
 import Svg, { Path, Rect, Defs, LinearGradient, RadialGradient, Stop, G, Ellipse, Polygon, Circle } from 'react-native-svg';
 import { Species, Rarity } from '../../types';
 import { Theme } from '../../theme/colors';
